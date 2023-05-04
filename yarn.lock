@@ -1391,6 +1391,11 @@
   resolved "https://registry.npmjs.org/@types/json5/-/json5-0.0.29.tgz"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
+"@types/language-tags@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/@types/language-tags/-/language-tags-1.0.1.tgz"
+  integrity sha512-rTtRNIewaBrkMUfsCe7ES3xsTRQcEVgic2yoDY9hM3D/nwmABcG2du4l4+dTbWvfO8pUYwL4/2TbWFJa/AGc2g==
+
 "@types/node@*", "@types/node@>=10.0.0":
   version "18.16.1"
   resolved "https://registry.npmjs.org/@types/node/-/node-18.16.1.tgz"

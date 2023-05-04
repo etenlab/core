@@ -755,7 +755,7 @@ export class GraphThirdLayerService {
     langId: Nanoid,
     mapInfo: {
       name: string;
-      map: string;
+      mapFileId: string;
       ext: string;
     },
   ): Promise<Nanoid | null> {
@@ -801,7 +801,7 @@ export class GraphThirdLayerService {
       },
     });
 
-    const dtos = mapNodes.map((node: any) => MapMapper.entityToDto(node));
+    const dtos = mapNodes.map((node) => MapMapper.entityToDto(node));
     return dtos;
   }
 }

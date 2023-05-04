@@ -1,6 +1,6 @@
 {
   "name": "@eten-lab/core",
-  "version": "0.1.2",
+  "version": "0.1.5",
   "description": "crowd bible core services",
   "repository": {
     "type": "git",
@@ -60,6 +60,7 @@
   ],
   "devDependencies": {
     "@size-limit/preset-small-lib": "^8.2.4",
+    "@types/language-tags": "^1.0.1",
     "husky": "^8.0.3",
     "size-limit": "^8.2.4",
     "tsdx": "^0.14.1",

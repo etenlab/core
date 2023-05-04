@@ -6,6 +6,11 @@ export { MaterializerService } from './services/materializer.service';
 export { TableService } from './services/table.service';
 export { VotingService } from './services/voting.service';
 export { SeedService } from './services/seed.service';
+export { CRUDService } from './services/crud-service';
+export { DefinitionService } from './services/definition.service';
+export { LexiconService } from './services/lexicon.service';
+export { SiteTextService } from './services/site-text.service';
+export { SyncService } from './services/sync.service';
 
 export { NodeRepository } from './repositories/node/node.repository';
 export { NodeTypeRepository } from './repositories/node/node-type.repository';

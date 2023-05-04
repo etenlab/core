@@ -89,10 +89,10 @@ export class SyncService {
 
   constructor(
     private readonly dbService: DbService,
-    private readonly syncSessionRepository: SyncSessionRepository
+    private readonly syncSessionRepository: SyncSessionRepository,
   ) {
     this.currentSyncLayer = Number(
-      localStorage.getItem(CURRENT_SYNC_LAYER_KEY) || '0'
+      localStorage.getItem(CURRENT_SYNC_LAYER_KEY) || '0',
     );
 
     if (!process.env.REACT_APP_CPG_SERVER_URL) {
@@ -102,7 +102,7 @@ export class SyncService {
     this.serverUrl = process.env.REACT_APP_CPG_SERVER_URL;
 
     this.lastLayerSync = Number(
-      localStorage.getItem(LAST_SYNC_LAYER_KEY) || '-1'
+      localStorage.getItem(LAST_SYNC_LAYER_KEY) || '-1',
     );
   }
 
@@ -174,7 +174,7 @@ export class SyncService {
 
     const sessionId = await this.syncSessionRepository.createSyncSession(
       fromSyncLayer,
-      toSyncLayer
+      toSyncLayer,
     );
 
     try {
@@ -182,7 +182,7 @@ export class SyncService {
     } catch (err) {
       await this.syncSessionRepository.completeSyncSession(
         sessionId,
-        new Error(String(err))
+        new Error(String(err)),
       );
       throw err;
     }
@@ -192,7 +192,10 @@ export class SyncService {
     console.log(
       `Sync completed successfully (${
         syncData.length
-      } tables, ${syncData.reduce((sum, c) => sum + c.rows.length, 0)} entries)`
+      } tables, ${syncData.reduce(
+        (sum, c) => sum + c.rows.length,
+        0,
+      )} entries)`,
     );
 
     this.setLastSyncLayer(toSyncLayer);
@@ -210,7 +213,7 @@ export class SyncService {
       const response = await axios.post(
         `${this.serverUrl}/sync/to-server`,
         entries,
-        {}
+        {},
       );
 
       return response.data;
@@ -257,6 +260,7 @@ export class SyncService {
       await this.saveSyncEntries(entries);
 
       this.setLastSyncFromServerTime(lastSync);
+      return;
     } catch (err) {
       console.log('Sync failed');
 
