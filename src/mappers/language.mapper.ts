@@ -1,5 +1,5 @@
-import { LanguageDto } from '@/dtos/language.dto';
-import { Node } from '@/models/index';
+import { LanguageDto } from '../dtos/language.dto';
+import { Node } from '../models';
 
 export class LanguageMapper {
   static entityToDto(entity: Node) {

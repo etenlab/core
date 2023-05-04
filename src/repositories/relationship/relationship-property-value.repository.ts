@@ -1,6 +1,6 @@
 import { RelationshipPropertyKey, RelationshipPropertyValue } from '@eten-lab/models';
-import { type DbService } from '@/services/db.service';
-import { type SyncService } from '@/services/sync.service';
+import { DbService } from '../../services/db.service';
+import { SyncService } from '../../services/sync.service';
 
 export class RelationshipPropertyValueRepository {
   constructor(

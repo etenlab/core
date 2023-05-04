@@ -1,10 +1,10 @@
 import { FindOptionsWhere } from 'typeorm';
 
-import { DbService } from '@/services/db.service';
-import { SyncService } from '@/services/sync.service';
+import { DbService } from '../../services/db.service';
+import { SyncService } from '../../services/sync.service';
 import { Node, NodeType } from '@eten-lab/models';
 
-import { PropertyKeyConst } from '@/constants/graph.constant';
+import { PropertyKeyConst } from '../../constants/graph.constant';
 
 export class NodeRepository {
   constructor(

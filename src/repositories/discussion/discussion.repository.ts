@@ -1,6 +1,6 @@
 import { Repository } from 'typeorm';
 import { User, Discussion } from '@eten-lab/models';
-import { DbService } from '@/services/db.service';
+import { DbService } from '../../services/db.service';
 
 export class DiscussionRepository {
   repository: Repository<Discussion>;

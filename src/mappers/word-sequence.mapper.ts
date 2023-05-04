@@ -2,12 +2,12 @@ import {
   WordSequenceDto,
   WordSequenceWithSubDto,
   SubSequenceDto,
-} from '@/dtos/word-sequence.dto';
-import { Node } from '@/models/index';
+} from '../dtos/word-sequence.dto';
+import { Node } from '../models';
 import {
   PropertyKeyConst,
   RelationshipTypeConst,
-} from '@/constants/graph.constant';
+} from '../constants/graph.constant';
 
 export class WordSequenceMapper {
   static entityToDto(entity: Node) {

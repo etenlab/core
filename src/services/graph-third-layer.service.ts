@@ -2,29 +2,29 @@ import { FindOptionsWhere, In } from 'typeorm';
 
 import { GraphFirstLayerService } from './graph-first-layer.service';
 import { GraphSecondLayerService } from './graph-second-layer.service';
-import { NodeRepository } from '@/repositories/node/node.repository';
+import { NodeRepository } from '../repositories/node/node.repository';
 
 import { Node, Relationship } from '@eten-lab/models';
 
-import { MapDto } from '@/dtos/map.dto';
-import { LanguageDto } from '@/dtos/language.dto';
-import { DocumentDto } from '@/dtos/document.dto';
-import { UserDto } from '@/dtos/user.dto';
+import { MapDto } from '../dtos/map.dto';
+import { LanguageDto } from '../dtos/language.dto';
+import { DocumentDto } from '../dtos/document.dto';
+import { UserDto } from '../dtos/user.dto';
 import {
   WordSequenceDto,
   WordSequenceWithSubDto,
-} from '@/dtos/word-sequence.dto';
+} from '../dtos/word-sequence.dto';
 
-import { MapMapper } from '@/mappers/map.mapper';
-import { DocumentMapper } from '@/mappers/document.mapper';
-import { LanguageMapper } from '@/mappers/language.mapper';
-import { WordSequenceMapper } from '@/mappers/word-sequence.mapper';
+import { MapMapper } from '../mappers/map.mapper';
+import { DocumentMapper } from '../mappers/document.mapper';
+import { LanguageMapper } from '../mappers/language.mapper';
+import { WordSequenceMapper } from '../mappers/word-sequence.mapper';
 
 import {
   NodeTypeConst,
   RelationshipTypeConst,
   PropertyKeyConst,
-} from '@/constants/graph.constant';
+} from '../constants/graph.constant';
 import { NodePropertyKey, NodePropertyValue } from '@eten-lab/models';
 import { NodePropertyKeyRepository } from '../repositories/node/node-property-key.repository';
 import { NodePropertyValueRepository } from '../repositories/node/node-property-value.repository';
@@ -320,7 +320,7 @@ export class GraphThirdLayerService {
     });
   }
 
-  async getUnTranslatedWords(langId: Nanoid) {
+  async getUnTranslatedWords(_langId: Nanoid) {
     // console.log('getUnTranslatedWords', langId);
     return this.getWords(
       [
@@ -801,7 +801,7 @@ export class GraphThirdLayerService {
       },
     });
 
-    const dtos = mapNodes.map((node) => MapMapper.entityToDto(node));
+    const dtos = mapNodes.map((node: any) => MapMapper.entityToDto(node));
     return dtos;
   }
 }

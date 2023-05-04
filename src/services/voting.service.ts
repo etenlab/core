@@ -1,10 +1,10 @@
-import { ElectionRepository } from '@/repositories/voting/election.repository';
-import { CandidateRepository } from '@/repositories/voting/candidate.repository';
-import { VoteRepository } from '@/repositories/voting/vote.repository';
+import { ElectionRepository } from '../repositories/voting/election.repository';
+import { CandidateRepository } from '../repositories/voting/candidate.repository';
+import { VoteRepository } from '../repositories/voting/vote.repository';
 
 import { Candidate, Election, Vote } from '@eten-lab/models';
 
-import { ElectionTypeConst } from '@/constants/voting.constant';
+import { ElectionTypeConst } from '../constants/voting.constant';
 
 export class VotingService {
   constructor(

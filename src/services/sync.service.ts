@@ -12,7 +12,7 @@ import {
   RelationshipPropertyValue,
 } from '@eten-lab/models';
 import { DbService } from './db.service';
-import { SyncSessionRepository } from '@/repositories/sync-session.repository';
+import { SyncSessionRepository } from '../repositories/sync-session.repository';
 
 interface SyncTable {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

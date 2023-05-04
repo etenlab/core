@@ -1,12 +1,12 @@
 import { GraphSecondLayerService } from './graph-second-layer.service';
-import { NodeRepository } from '@/repositories/node/node.repository';
-import { NodePropertyValueRepository } from '@/repositories/node/node-property-value.repository';
+import { NodeRepository } from '../repositories/node/node.repository';
+import { NodePropertyValueRepository } from '../repositories/node/node-property-value.repository';
 import {
   NodeTypeConst,
   RelationshipTypeConst,
   PropertyKeyConst,
-} from '@/constants/graph.constant';
-import { type Node } from '@eten-lab/models';
+} from '../constants/graph.constant';
+import { Node } from '@eten-lab/models';
 import { VotingService } from './voting.service';
 import { ElectionTypeConst } from '../constants/voting.constant';
 
@@ -53,14 +53,15 @@ export class TableService {
       return column_id;
     }
 
-    const { node } =
-      await this.secondLayerService.createRelatedToNodeFromObject(
-        RelationshipTypeConst.TABLE_TO_COLUMN,
-        {},
-        table,
-        NodeTypeConst.TABLE_COLUMN,
-        { name: column_name },
-      );
+    const {
+      node,
+    } = await this.secondLayerService.createRelatedToNodeFromObject(
+      RelationshipTypeConst.TABLE_TO_COLUMN,
+      {},
+      table,
+      NodeTypeConst.TABLE_COLUMN,
+      { name: column_name },
+    );
 
     return node.id;
   }
@@ -104,14 +105,15 @@ export class TableService {
   }
 
   async createRow(table: Nanoid): Promise<Nanoid> {
-    const { node } =
-      await this.secondLayerService.createRelatedToNodeFromObject(
-        RelationshipTypeConst.TABLE_TO_ROW,
-        {},
-        table,
-        NodeTypeConst.TABLE_ROW,
-        {},
-      );
+    const {
+      node,
+    } = await this.secondLayerService.createRelatedToNodeFromObject(
+      RelationshipTypeConst.TABLE_TO_ROW,
+      {},
+      table,
+      NodeTypeConst.TABLE_ROW,
+      {},
+    );
     return node.id;
   }
 
@@ -203,13 +205,13 @@ export class TableService {
   async getPseudoCell(column: Nanoid, row: Nanoid): Promise<Node[]> {
     const cells = await this.getCells(column, row);
     return cells.filter(
-      (cell) => cell.node_type === NodeTypeConst.TABLE_CELL_PSEUDO,
+      cell => cell.node_type === NodeTypeConst.TABLE_CELL_PSEUDO,
     );
   }
 
   async getDataCells(column: Nanoid, row: Nanoid): Promise<Node[]> {
     const cells = await this.getCells(column, row);
-    return cells.filter((cell) => cell.node_type === NodeTypeConst.TABLE_CELL);
+    return cells.filter(cell => cell.node_type === NodeTypeConst.TABLE_CELL);
   }
 
   async getCells(column: Nanoid, row: Nanoid): Promise<Node[]> {
@@ -248,9 +250,8 @@ export class TableService {
     ).value;
 
     for (const cell of cells) {
-      const data = JSON.parse(
-        cell.propertyKeys[0].propertyValue.property_value,
-      ).value;
+      const data = JSON.parse(cell.propertyKeys[0].propertyValue.property_value)
+        .value;
 
       console.log(election!.id);
       console.log(cell.id);

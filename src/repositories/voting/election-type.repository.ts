@@ -1,8 +1,8 @@
 import { ElectionType } from '@eten-lab/models';
-import { type DbService } from '@/services/db.service';
-import { type SyncService } from '@/services/sync.service';
+import { DbService } from '../../services/db.service';
+import { SyncService } from '../../services/sync.service';
 
-import { ElectionTypeConst } from '@/constants/voting.constant';
+import { ElectionTypeConst } from '../../constants/voting.constant';
 
 export class ElectionTypeRepository {
   constructor(

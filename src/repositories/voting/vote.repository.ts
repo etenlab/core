@@ -1,5 +1,5 @@
-import { DbService } from '@/services/db.service';
-import { SyncService } from '@/services/sync.service';
+import { DbService } from '../../services/db.service';
+import { SyncService } from '../../services/sync.service';
 import { Vote } from '@eten-lab/models';
 
 export interface IVoteInput {

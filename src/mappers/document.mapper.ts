@@ -1,5 +1,5 @@
-import { DocumentDto } from '@/dtos/document.dto';
-import { Node } from '@/models/index';
+import { DocumentDto } from '../dtos/document.dto';
+import { Node } from '../models';
 
 export class DocumentMapper {
   static entityToDto(entity: Node) {

@@ -1,5 +1,5 @@
 import { MapDto } from '../dtos/map.dto';
-import { Node } from '@/src/models';
+import { Node } from '../../src/models';
 
 export class MapMapper {
   static entityToDto(entity: Node) {

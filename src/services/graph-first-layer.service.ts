@@ -1,21 +1,22 @@
 import { FindOptionsWhere } from 'typeorm';
 
-import { NodePropertyKeyRepository } from '@/repositories/node/node-property-key.repository';
-import { NodePropertyValueRepository } from '@/repositories/node/node-property-value.repository';
-import { NodeRepository } from '@/repositories/node/node.repository';
-import { NodeTypeRepository } from '@/repositories/node/node-type.repository';
+import { NodePropertyKeyRepository } from '../repositories/node/node-property-key.repository';
+import { NodePropertyValueRepository } from '../repositories/node/node-property-value.repository';
+import { NodeRepository } from '../repositories/node/node.repository';
+import { NodeTypeRepository } from '../repositories/node/node-type.repository';
 
-import { RelationshipPropertyKeyRepository } from '@/repositories/relationship/relationship-property-key.repository';
-import { RelationshipPropertyValueRepository } from '@/repositories/relationship/relationship-property-value.repository';
-import { RelationshipRepository } from '@/repositories/relationship/relationship.repository';
-import { RelationshipTypeRepository } from '@/repositories/relationship/relationship-type.repository';
+import { RelationshipPropertyKeyRepository } from '../repositories/relationship/relationship-property-key.repository';
+import { RelationshipPropertyValueRepository } from '../repositories/relationship/relationship-property-value.repository';
+import { RelationshipRepository } from '../repositories/relationship/relationship.repository';
+import { RelationshipTypeRepository } from '../repositories/relationship/relationship-type.repository';
 
-import { NodeType } from '@eten-lab/models';
-import { type Node } from '@eten-lab/models';
-
-import { RelationshipType } from '@eten-lab/models';
-import { type Relationship } from '@eten-lab/models';
-import { NodeTypeConst, PropertyKeyConst } from '@/constants/graph.constant';
+import {
+  Node,
+  NodeType,
+  Relationship,
+  RelationshipType,
+} from '@eten-lab/models';
+import { NodeTypeConst, PropertyKeyConst } from '../constants/graph.constant';
 
 export class GraphFirstLayerService {
   constructor(

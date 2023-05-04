@@ -1,7 +1,6 @@
 import { GraphFirstLayerService } from './graph-first-layer.service';
 
-import { type Node } from '@eten-lab/models';
-import { type Relationship } from '@eten-lab/models';
+import { Node, Relationship } from '@eten-lab/models';
 
 export class GraphSecondLayerService {
   constructor(private readonly firstLayerService: GraphFirstLayerService) {}
