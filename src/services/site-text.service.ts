@@ -22,10 +22,13 @@ import { SiteText, SiteTextTranslation } from '@eten-lab/models';
 
 import { SiteTextRepository } from '../repositories/site-text/site-text.repository';
 import { SiteTextTranslationRepository } from '../repositories/site-text/site-text-translation.repository';
+import { GraphThirdLayerService } from './graph-third-layer.service';
+import { LanguageInfo } from '@eten-lab/ui-kit/dist/LangSelector/LangSelector';
 
 export class SiteTextService {
   constructor(
     private readonly graphFirstLayerService: GraphFirstLayerService,
+    private readonly graphThirdLayerService: GraphThirdLayerService,
     private readonly votingService: VotingService,
     private readonly definitionService: DefinitionService,
 
@@ -38,21 +41,29 @@ export class SiteTextService {
     siteText: string,
     definitionText: string,
   ): Promise<{ wordId: Nanoid; definitionId: Nanoid }> {
-    const langDto = await this.definitionService.getLanguageById(languageId);
+    // TODO: refactor code that uses this method to provide proper LanguageInfo here and replace mocked value
+    const langInfo_mocked: LanguageInfo = {
+      lang: {
+        tag: 'ua',
+        descriptions: [
+          'mocked lang tag as "ua", use new language Selector to get LangInfo values from user',
+        ],
+      },
+    };
+    console.log(
+      `use langInfo_mocked ${JSON.stringify(
+        langInfo_mocked,
+      )} in place of langId ${languageId}`,
+    );
 
-    const {
-      wordId,
-      electionId,
-    } = await this.definitionService.createWordAndDefinitionsElection(
+    const wordId = await this.graphThirdLayerService.createWordOrPhraseWithLang(
       siteText,
-      languageId,
-      langDto.electionWordsId!,
+      langInfo_mocked,
     );
 
     const { definitionId } = await this.definitionService.createDefinition(
       definitionText,
       wordId,
-      electionId,
     );
 
     return {
@@ -75,10 +86,11 @@ export class SiteTextService {
       throw new Error('Not exists election entity with given props');
     }
 
-    const translations = await this.siteTextTranslationRepo.getSiteTextTranslationList(
-      siteTextId,
-      langId,
-    );
+    const translations =
+      await this.siteTextTranslationRepo.getSiteTextTranslationList(
+        siteTextId,
+        langId,
+      );
 
     let highestVoted: {
       id: string | null;
@@ -112,22 +124,25 @@ export class SiteTextService {
       return null;
     }
 
-    const siteTextTranslationEntity = await this.siteTextTranslationRepo.getSiteTextTranslationById(
-      highestVoted.id,
-    );
+    const siteTextTranslationEntity =
+      await this.siteTextTranslationRepo.getSiteTextTranslationById(
+        highestVoted.id,
+      );
 
     if (!siteTextTranslationEntity) {
       return null;
     }
 
-    const translatedSiteText = (await this.graphFirstLayerService.getNodePropertyValue(
-      siteTextTranslationEntity.word_ref,
-      PropertyKeyConst.NAME,
-    )) as string;
-    const translatedDefinition = (await this.graphFirstLayerService.getNodePropertyValue(
-      siteTextTranslationEntity.definition_ref,
-      PropertyKeyConst.TEXT,
-    )) as string;
+    const translatedSiteText =
+      (await this.graphFirstLayerService.getNodePropertyValue(
+        siteTextTranslationEntity.word_ref,
+        PropertyKeyConst.NAME,
+      )) as string;
+    const translatedDefinition =
+      (await this.graphFirstLayerService.getNodePropertyValue(
+        siteTextTranslationEntity.definition_ref,
+        PropertyKeyConst.TEXT,
+      )) as string;
 
     return {
       id: siteTextTranslationEntity.id,
@@ -142,23 +157,26 @@ export class SiteTextService {
     siteTextId: Nanoid,
     langId: Nanoid,
   ): Promise<SiteTextTranslationDto | null> {
-    const translationEntity = await this.siteTextTranslationRepo.getSelectedSiteTextTranslation(
-      siteTextId,
-      langId,
-    );
+    const translationEntity =
+      await this.siteTextTranslationRepo.getSelectedSiteTextTranslation(
+        siteTextId,
+        langId,
+      );
 
     if (!translationEntity) {
       return null;
     }
 
-    const translatedSiteText = (await this.graphFirstLayerService.getNodePropertyValue(
-      translationEntity.word_ref,
-      PropertyKeyConst.NAME,
-    )) as string;
-    const translatedDefinition = (await this.graphFirstLayerService.getNodePropertyValue(
-      translationEntity.definition_ref,
-      PropertyKeyConst.TEXT,
-    )) as string;
+    const translatedSiteText =
+      (await this.graphFirstLayerService.getNodePropertyValue(
+        translationEntity.word_ref,
+        PropertyKeyConst.NAME,
+      )) as string;
+    const translatedDefinition =
+      (await this.graphFirstLayerService.getNodePropertyValue(
+        translationEntity.definition_ref,
+        PropertyKeyConst.TEXT,
+      )) as string;
 
     return {
       id: translationEntity.id,
@@ -257,12 +275,13 @@ export class SiteTextService {
       translatedDescription,
     );
 
-    const translationSiteTextEntity = await this.siteTextTranslationRepo.createOrFindSiteTextTranslation(
-      siteTextId,
-      languageId,
-      wordId,
-      definitionId,
-    );
+    const translationSiteTextEntity =
+      await this.siteTextTranslationRepo.createOrFindSiteTextTranslation(
+        siteTextId,
+        languageId,
+        wordId,
+        definitionId,
+      );
 
     const election = await this.votingService.getElectionByRef(
       ElectionTypeConst.SITE_TEXT_TRANSLATION,
@@ -292,10 +311,11 @@ export class SiteTextService {
     const siteTextDtos: SiteTextWithTranslationCntDto[] = [];
 
     for (const siteText of siteTexts) {
-      const translations = await this.siteTextTranslationRepo.getSiteTextTranslationList(
-        siteText.id,
-        targetLanguageId,
-      );
+      const translations =
+        await this.siteTextTranslationRepo.getSiteTextTranslationList(
+          siteText.id,
+          targetLanguageId,
+        );
 
       const siteTextDto = await this.getSiteTextByIdAndLanguageId(
         siteText.id,
@@ -398,10 +418,11 @@ export class SiteTextService {
       throw new Error('Not exists site text with given Id');
     }
 
-    const translations = await this.siteTextTranslationRepo.getSiteTextTranslationList(
-      siteTextDto.id,
-      targetLanguageId,
-    );
+    const translations =
+      await this.siteTextTranslationRepo.getSiteTextTranslationList(
+        siteTextDto.id,
+        targetLanguageId,
+      );
 
     const translationsDto: SiteTextTranslationVotable[] = [];
 
@@ -439,22 +460,23 @@ export class SiteTextService {
     id: Nanoid,
     electionId?: Nanoid,
   ): Promise<SiteTextTranslationVotable | null> {
-    const siteTextTranslationEntity = await this.siteTextTranslationRepo.getSiteTextTranslationById(
-      id,
-    );
+    const siteTextTranslationEntity =
+      await this.siteTextTranslationRepo.getSiteTextTranslationById(id);
 
     if (!siteTextTranslationEntity) {
       return null;
     }
 
-    const translatedSiteText = (await this.graphFirstLayerService.getNodePropertyValue(
-      siteTextTranslationEntity.word_ref,
-      PropertyKeyConst.NAME,
-    )) as string;
-    const translatedDefinition = (await this.graphFirstLayerService.getNodePropertyValue(
-      siteTextTranslationEntity.definition_ref,
-      PropertyKeyConst.TEXT,
-    )) as string;
+    const translatedSiteText =
+      (await this.graphFirstLayerService.getNodePropertyValue(
+        siteTextTranslationEntity.word_ref,
+        PropertyKeyConst.NAME,
+      )) as string;
+    const translatedDefinition =
+      (await this.graphFirstLayerService.getNodePropertyValue(
+        siteTextTranslationEntity.definition_ref,
+        PropertyKeyConst.TEXT,
+      )) as string;
 
     let curElectionId = electionId;
 
@@ -538,10 +560,11 @@ export class SiteTextService {
       return;
     }
 
-    const selectedSiteTextTranslation = await this.siteTextTranslationRepo.getSelectedSiteTextTranslation(
-      siteTextId,
-      langId,
-    );
+    const selectedSiteTextTranslation =
+      await this.siteTextTranslationRepo.getSelectedSiteTextTranslation(
+        siteTextId,
+        langId,
+      );
 
     if (!selectedSiteTextTranslation) {
       return;
