@@ -33,11 +33,5 @@
     "forceConsistentCasingInFileNames": true,
     // `tsdx build` ignores this option, but it is commonly used when type-checking separately with `tsc`
     "noEmit": true,
-    "paths": {
-      "@eten-lab/core/constants/*": ["src/constants/*"],
-      "@eten-lab/core/repositories/*": ["src/repositories/*"],
-      "@eten-lab/core/services/*": ["src/services/*"],
-      "@eten-lab/core/*": ["src/*"]
-    }
   }
 }
