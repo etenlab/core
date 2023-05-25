@@ -12,7 +12,15 @@ export class NodePropertyValueRepository {
     return this.dbService.dataSource.getRepository(NodePropertyValue);
   }
 
-  private async createNodePropertyValue(
+  /**
+   * This function create a node property value by give key_id, and key_value.
+   * Feature: node property value is immutable data, no update, and no duplicate.
+   *
+   * @param key_id
+   * @param key_value
+   * @returns
+   */
+  async createNodePropertyValue(
     key_id: Nanoid,
     key_value: unknown,
   ): Promise<Nanoid> {
@@ -22,6 +30,16 @@ export class NodePropertyValueRepository {
 
     if (node_property_key === null) {
       throw new Error(`Not exists property key by given #key_id='${key_id}'`);
+    }
+
+    const nodePropertyValue = await this.repository.findOne({
+      where: {
+        node_property_key_id: key_id,
+      },
+    });
+
+    if (nodePropertyValue) {
+      throw new Error(`Already exists propertyValue!`);
     }
 
     const new_property_value_instance = this.repository.create({
@@ -39,6 +57,15 @@ export class NodePropertyValueRepository {
     return node_property_value.id;
   }
 
+  /**
+   * @deprecated
+   *
+   * This is wrong method, Never use it, and delete all you used
+   *
+   * @param key_id
+   * @param key_value
+   * @returns
+   */
   async setNodePropertyValue(
     key_id: Nanoid,
     key_value: unknown,

@@ -1,15 +1,11 @@
+export { CRUDService } from './services/crud-service';
 export { DbService } from './services/db.service';
 export { GraphFirstLayerService } from './services/graph-first-layer.service';
 export { GraphSecondLayerService } from './services/graph-second-layer.service';
-export { GraphThirdLayerService } from './services/graph-third-layer.service';
+export { LoggerService } from './services/logger.service';
 export { MaterializerService } from './services/materializer.service';
 export { TableService } from './services/table.service';
 export { VotingService } from './services/voting.service';
-export { SeedService } from './services/seed.service';
-export { CRUDService } from './services/crud-service';
-export { DefinitionService } from './services/definition.service';
-export { LexiconService } from './services/lexicon.service';
-export { SiteTextService } from './services/site-text.service';
 export { SyncService } from './services/sync.service';
 
 export { NodeRepository } from './repositories/node/node.repository';
@@ -21,10 +17,6 @@ export { RelationshipRepository } from './repositories/relationship/relationship
 export { RelationshipTypeRepository } from './repositories/relationship/relationship-type.repository';
 export { RelationshipPropertyKeyRepository } from './repositories/relationship/relationship-property-key.repository';
 export { RelationshipPropertyValueRepository } from './repositories/relationship/relationship-property-value.repository';
-
-export { DiscussionRepository } from './repositories/discussion/discussion.repository';
-export { SiteTextRepository } from './repositories/site-text/site-text.repository';
-export { SiteTextTranslationRepository } from './repositories/site-text/site-text-translation.repository';
 
 export { VoteRepository } from './repositories/voting/vote.repository';
 export { CandidateRepository } from './repositories/voting/candidate.repository';

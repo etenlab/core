@@ -1,10 +1,19 @@
-import { FindOptionsWhere } from 'typeorm';
+import { FindOptionsWhere, In } from 'typeorm';
 
 import { DbService } from '../../services/db.service';
 import { SyncService } from '../../services/sync.service';
 import { Node, NodeType } from '@eten-lab/models';
 
-import { PropertyKeyConst } from '../../constants/graph.constant';
+import {
+  NodeTypeConst,
+  PropertyKeyConst,
+  RelationshipTypeConst,
+} from '../../constants/graph.constant';
+export interface getNodesByTypeAndRelatedNodesParams {
+  type: NodeTypeConst;
+  from_node_id?: Nanoid;
+  to_node_id?: Nanoid;
+}
 
 export class NodeRepository {
   constructor(
@@ -125,7 +134,7 @@ export class NodeRepository {
 
     if (relationship) {
       if (relationship.from_node_id) {
-        relationsArray.push('toNodeRelationships');
+        relationsArray.push('fromNodeRelationships');
         whereObj.fromNodeRelationships = {};
         whereObj.fromNodeRelationships.from_node_id = relationship.from_node_id;
         if (relationship.relationship_type) {
@@ -153,7 +162,51 @@ export class NodeRepository {
     return node;
   }
 
-  async getNodesByProps(
+  async getNodesIdsByPropAndRelTypes(
+    nodeType: string,
+    prop: { key: string; value: string }[],
+    relationshipTypes: RelationshipTypeConst[],
+  ): Promise<Nanoid[]> {
+    const relationsArray = [
+      'propertyKeys',
+      'propertyKeys.propertyValue',
+      'toNodeRelationships',
+      'toNodeRelationships.relationshipType',
+      'fromNodeRelationships',
+      'fromNodeRelationships.relationshipType',
+    ];
+
+    const propertyKeyValueArray = prop.map(({ key, value }) => ({
+      property_key: key,
+      propertyValue: {
+        property_value: JSON.stringify({ value }),
+      },
+    }));
+
+    const nodes = await this.repository.find({
+      relations: relationsArray,
+      where: [
+        {
+          node_type: nodeType,
+          propertyKeys: propertyKeyValueArray,
+          toNodeRelationships: {
+            relationshipType: In(relationshipTypes),
+          },
+        },
+        {
+          node_type: nodeType,
+          propertyKeys: propertyKeyValueArray,
+          fromNodeRelationships: {
+            relationshipType: In(relationshipTypes),
+          },
+        },
+      ],
+    });
+
+    return nodes.map(n => n.id);
+  }
+
+  async getNodeIdsByProps(
     type: string,
     props: { key: string; value: unknown }[],
   ): Promise<Nanoid[]> {
@@ -192,13 +245,71 @@ export class NodeRepository {
           nodes.node_type = '${type}';
       `;
 
-    const nodes: [{ id: Nanoid }] = await this.repository.query(sqlStr);
+    const nodes: [{ node_id: Nanoid }] = await this.repository.query(sqlStr);
 
     if (!nodes) {
       return [];
     }
 
-    return nodes.map(({ id }) => id);
+    return nodes.map(({ node_id }) => node_id);
+  }
+
+  async getNodesByIds(
+    ids: Array<string>,
+    additionalRelations: Array<string> = [],
+  ): Promise<Node[]> {
+    return this.repository.find({
+      where: { id: In(ids) },
+      relations: [
+        'propertyKeys',
+        'propertyKeys.propertyValue',
+        ...additionalRelations,
+      ],
+      select: {
+        propertyKeys: {
+          property_key: true,
+          propertyValue: {
+            property_value: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getNodesByTypeAndRelatedNodes({
+    type,
+    from_node_id,
+    to_node_id,
+  }: getNodesByTypeAndRelatedNodesParams): Promise<Node[]> {
+    try {
+      const foundNodesQB = await this.repository
+        .createQueryBuilder('node')
+        .leftJoinAndSelect('node.propertyKeys', 'propertyKeys')
+        .leftJoinAndSelect('propertyKeys.propertyValue', 'propertyValue')
+        .leftJoinAndSelect('node.toNodeRelationships', 'toNodeRelationships')
+        .leftJoinAndSelect(
+          'node.fromNodeRelationships',
+          'fromNodeRelationships',
+        )
+        .where('node.node_type = :type', { type });
+
+      from_node_id &&
+        foundNodesQB.andWhere(
+          'fromNodeRelationships.from_node_id = :from_node_id',
+          {
+            from_node_id,
+          },
+        );
+
+      to_node_id &&
+        foundNodesQB.andWhere('toNodeRelationships.to_node_id = :to_node_id', {
+          to_node_id,
+        });
+      return foundNodesQB.getMany();
+    } catch (err) {
+      console.error(err);
+      throw new Error(`Failed to get nodes by type ${type}`);
+    }
   }
 
   async getNodePropertyValue(
@@ -222,8 +333,10 @@ export class NodeRepository {
     }
 
     const propertyIdx = nodeEntity.propertyKeys.findIndex(
-      (pk) => pk.property_key === propertyName,
+      pk => pk.property_key === propertyName,
     );
+
+    if (propertyIdx < 0) return null;
 
     const resJson =
       nodeEntity.propertyKeys[propertyIdx].propertyValue.property_value;

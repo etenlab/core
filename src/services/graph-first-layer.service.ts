@@ -2,7 +2,10 @@ import { FindOptionsWhere } from 'typeorm';
 
 import { NodePropertyKeyRepository } from '../repositories/node/node-property-key.repository';
 import { NodePropertyValueRepository } from '../repositories/node/node-property-value.repository';
-import { NodeRepository } from '../repositories/node/node.repository';
+import {
+  NodeRepository,
+  getNodesByTypeAndRelatedNodesParams,
+} from '../repositories/node/node.repository';
 import { NodeTypeRepository } from '../repositories/node/node-type.repository';
 
 import { RelationshipPropertyKeyRepository } from '../repositories/relationship/relationship-property-key.repository';
@@ -16,7 +19,7 @@ import {
   Relationship,
   RelationshipType,
 } from '@eten-lab/models';
-import { NodeTypeConst, PropertyKeyConst } from '../constants/graph.constant';
+import { PropertyKeyConst } from '../constants/graph.constant';
 
 export class GraphFirstLayerService {
   constructor(
@@ -69,16 +72,82 @@ export class GraphFirstLayerService {
     return this.nodeRepo.getNodeByProp(type, prop, relationship);
   }
 
-  async getNodesByProps(
+  async getNodeIdsByProps(
     type: string,
     props: { key: string; value: unknown }[],
   ): Promise<Nanoid[]> {
-    return this.nodeRepo.getNodesByProps(type, props);
+    return this.nodeRepo.getNodeIdsByProps(type, props);
+  }
+
+  async getNodesByIds(ids: Array<string>): Promise<Node[]> {
+    return this.nodeRepo.getNodesByIds(ids);
+  }
+
+  async getNodesWithRelationshipsByIds(nodeIds: string[]): Promise<Node[]> {
+    return this.nodeRepo.getNodesByIds(nodeIds, [
+      'toNodeRelationships',
+      'fromNodeRelationships',
+    ]);
+  }
+
+  async getNodesByProps(
+    type: string,
+    props: { key: string; value: unknown }[],
+  ): Promise<Node[]> {
+    const nodeIds = await this.getNodeIdsByProps(type, props);
+    return this.nodeRepo.getNodesByIds(nodeIds);
+  }
+
+  async getNodesByTypeAndRelatedNodes({
+    type,
+    from_node_id,
+    to_node_id,
+  }: getNodesByTypeAndRelatedNodesParams): Promise<Node[]> {
+    return this.nodeRepo.getNodesByTypeAndRelatedNodes({
+      type,
+      from_node_id,
+      to_node_id,
+    });
   }
 
   // node-property-key
+  async createNodePropertyKey(
+    node_id: Nanoid,
+    key_name: string,
+  ): Promise<Nanoid> {
+    return this.nodePropertyKeyRepo.createNodePropertyKey(node_id, key_name);
+  }
+
+  async findNodePropertyKey(
+    node_id: Nanoid,
+    key_name: string,
+  ): Promise<Nanoid | null> {
+    return this.nodePropertyKeyRepo.findNodePropertyKey(node_id, key_name);
+  }
+
+  /**
+   * @deprecated
+   * Never use this function, because graph-schema is immutable data-structure.
+   * If you want to get a propertyKey id, use findPropertyKey()
+   * And if you want to create a new propertyKey entity, then user createRelationshipPropertyKey() function
+   *
+   * @param rel_id
+   * @param key_name
+   * @returns
+   */
   async getNodePropertyKey(node_id: Nanoid, key_name: string): Promise<Nanoid> {
     return this.nodePropertyKeyRepo.getNodePropertyKey(node_id, key_name);
+  }
+
+  // node-property-value
+  async createNodePropertyValue(
+    key_id: Nanoid,
+    key_value: unknown,
+  ): Promise<Nanoid> {
+    return this.nodePropertyValueRepo.createNodePropertyValue(
+      key_id,
+      key_value,
+    );
   }
 
   async getNodePropertyValue(
@@ -88,7 +157,13 @@ export class GraphFirstLayerService {
     return this.nodeRepo.getNodePropertyValue(nodeId, propertyName);
   }
 
-  // node-property-value
+  /**
+   * @deprecated
+   *
+   * @param key_id
+   * @param key_value
+   * @returns
+   */
   async setNodePropertyValue(
     key_id: Nanoid,
     key_value: unknown,
@@ -130,8 +205,12 @@ export class GraphFirstLayerService {
     return this.relationshipRepo.listAllRelationshipsByType(type_name);
   }
 
-  async readRelationship(rel_id: Nanoid): Promise<Relationship | null> {
-    return this.relationshipRepo.readRelationship(rel_id);
+  async readRelationship(
+    rel_id: Nanoid,
+    relations?: string[],
+    whereObj?: FindOptionsWhere<Relationship>,
+  ): Promise<Relationship | null> {
+    return this.relationshipRepo.readRelationship(rel_id, relations, whereObj);
   }
 
   // async listRelatedNodes(node_id: string): Promise<any> {
@@ -139,6 +218,36 @@ export class GraphFirstLayerService {
   // }
 
   // relationship property key
+  async createRelationshipPropertyKey(
+    rel_id: Nanoid,
+    key_name: string,
+  ): Promise<Nanoid> {
+    return this.relationshipPropertyKeyRepo.createRelationshipPropertyKey(
+      rel_id,
+      key_name,
+    );
+  }
+
+  async findRelationshipPropertyKey(
+    rel_id: Nanoid,
+    key_name: string,
+  ): Promise<Nanoid | null> {
+    return this.relationshipPropertyKeyRepo.createRelationshipPropertyKey(
+      rel_id,
+      key_name,
+    );
+  }
+
+  /**
+   * @deprecated
+   * Never use this function, because graph-schema is immutable data-structure.
+   * If you want to get a propertyKey id, use findPropertyKey()
+   * And if you want to create a new propertyKey entity, then user createRelationshipPropertyKey() function
+   *
+   * @param rel_id
+   * @param key_name
+   * @returns
+   */
   async getRelationshipPropertyKey(
     rel_id: Nanoid,
     key_name: string,
@@ -150,6 +259,30 @@ export class GraphFirstLayerService {
   }
 
   // relationship property value
+  async createRelationshipPropertyValue(
+    key_id: Nanoid,
+    key_value: unknown,
+  ): Promise<Nanoid> {
+    return this.relationshipPropertyValueRepo.createRelationshipPropertyValue(
+      key_id,
+      key_value,
+    );
+  }
+
+  async getRelationshipPropertyValue(
+    nodeId: Nanoid,
+    propertyName: PropertyKeyConst,
+  ): Promise<unknown> {
+    return this.relationshipRepo.getRelationshipPropertyValue(
+      nodeId,
+      propertyName,
+    );
+  }
+
+  /**
+   * @deprecated
+   * Never use it, delete everything you used
+   */
   async setRelationshipPropertyValue(
     key_id: Nanoid,
     key_value: unknown,
@@ -159,46 +292,4 @@ export class GraphFirstLayerService {
       key_value,
     );
   }
-
-  async getNodesByTypeAndRelatedNodes({
-    type,
-    from_node_id,
-    to_node_id,
-  }: getNodesByTypeAndRelatedNodesParams): Promise<Node[]> {
-    try {
-      const foundNodesQB = await this.nodeRepo.repository
-        .createQueryBuilder('node')
-        .leftJoinAndSelect('node.propertyKeys', 'propertyKeys')
-        .leftJoinAndSelect('propertyKeys.propertyValue', 'propertyValue')
-        .leftJoinAndSelect('node.toNodeRelationships', 'toNodeRelationships')
-        .leftJoinAndSelect(
-          'node.fromNodeRelationships',
-          'fromNodeRelationships',
-        )
-        .where('node.node_type = :type', { type });
-
-      from_node_id &&
-        foundNodesQB.andWhere(
-          'fromNodeRelationships.from_node_id = :from_node_id',
-          {
-            from_node_id,
-          },
-        );
-
-      to_node_id &&
-        foundNodesQB.andWhere('toNodeRelationships.to_node_id = :to_node_id', {
-          to_node_id,
-        });
-      return foundNodesQB.getMany();
-    } catch (err) {
-      console.error(err);
-      throw new Error(`Failed to get nodes by type ${type}`);
-    }
-  }
-}
-
-interface getNodesByTypeAndRelatedNodesParams {
-  type: NodeTypeConst;
-  from_node_id?: Nanoid;
-  to_node_id?: Nanoid;
 }

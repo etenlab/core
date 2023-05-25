@@ -1,6 +1,6 @@
 {
   "name": "@eten-lab/core",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "crowd bible core services",
   "repository": {
     "type": "git",
@@ -68,10 +68,11 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@eten-lab/models": "^1.3.6",
+    "@eten-lab/models": "^1.3.12",
     "@eten-lab/ui-kit": "^0.5.25",
     "axios": "^1.3.6",
     "localforage": "^1.10.0",
+    "roarr": "^7.15.0",
     "typeorm": "^0.3.12",
     "yup": "^1.1.1"
   }

@@ -13,17 +13,23 @@ export class VotingService {
     private readonly voteRepo: VoteRepository,
   ) {}
 
-  async createElection(
+  async createOrFindElection(
     election_type: ElectionTypeConst,
     election_ref: Nanoid,
     ref_table_name: string,
     candidate_ref_table_name: string,
+    options?: {
+      appId?: Nanoid;
+      siteText?: boolean;
+      siteTextTranslation?: boolean;
+    },
   ): Promise<Election> {
-    return this.electionRepo.createElection(
+    return this.electionRepo.createOrFindElection(
       election_type,
       election_ref,
       ref_table_name,
       candidate_ref_table_name,
+      options,
     );
   }
 
@@ -35,11 +41,17 @@ export class VotingService {
     election_type: ElectionTypeConst,
     election_ref: Nanoid,
     ref_table_name: string,
+    options?: {
+      appId?: Nanoid;
+      siteText?: boolean;
+      siteTextTranslation?: boolean;
+    },
   ): Promise<Election | null> {
     return this.electionRepo.getElectionByRef(
       election_type,
       election_ref,
       ref_table_name,
+      options,
     );
   }
 
@@ -78,6 +90,10 @@ export class VotingService {
     return this.candidateRepo.getCandidateByRef(electionId, candidateRef);
   }
 
+  async getCandidateListByElectionId(electionId: Nanoid): Promise<Candidate[]> {
+    return this.candidateRepo.getCandidateListByElectionId(electionId);
+  }
+
   async getVotesStats(candidateId: Nanoid): Promise<VotesStatsRow> {
     return this.voteRepo.getVotesStats(candidateId);
   }
@@ -95,5 +111,21 @@ export class VotingService {
     userId: Nanoid,
   ): Promise<Vote | null> {
     return this.voteRepo.getVoteByRef(candidateId, userId);
+  }
+
+  async getSiteTextElectionList({
+    appId,
+    siteText,
+    siteTextTranslation,
+  }: {
+    appId: string;
+    siteText?: boolean;
+    siteTextTranslation?: boolean;
+  }): Promise<Election[]> {
+    return this.electionRepo.getSiteTextElectionList({
+      appId,
+      siteText,
+      siteTextTranslation,
+    });
   }
 }

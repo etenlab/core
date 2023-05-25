@@ -49,4 +49,14 @@ export class CandidateRepository {
       candidate_ref,
     });
   }
+
+  async getCandidateListByElectionId(
+    election_id: Nanoid,
+  ): Promise<Candidate[]> {
+    return this.repository.find({
+      where: {
+        election_id,
+      },
+    });
+  }
 }

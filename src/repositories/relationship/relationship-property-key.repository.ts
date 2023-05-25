@@ -12,11 +12,14 @@ export class RelationshipPropertyKeyRepository {
     return this.dbService.dataSource.getRepository(RelationshipPropertyKey);
   }
 
-  private async createRelationshipPropertyKey(
+  async createRelationshipPropertyKey(
     rel_id: Nanoid,
     key_name: string,
   ): Promise<Nanoid> {
-    const property_key = await this.findPropertyKey(rel_id, key_name);
+    const property_key = await this.findRelationshipPropertyKey(
+      rel_id,
+      key_name,
+    );
 
     if (property_key !== null) {
       throw new Error(
@@ -51,7 +54,7 @@ export class RelationshipPropertyKeyRepository {
     return new_property_key.id;
   }
 
-  private async findPropertyKey(
+  async findRelationshipPropertyKey(
     rel_id: Nanoid,
     key_name: string,
   ): Promise<Nanoid | null> {
@@ -65,11 +68,24 @@ export class RelationshipPropertyKeyRepository {
     return relationshipPropertyKey?.id || null;
   }
 
+  /**
+   * @deprecated
+   * Never use this function, because graph-schema is immutable data-structure.
+   * If you want to get a propertyKey id, use findPropertyKey()
+   * And if you want to create a new propertyKey entity, then user createRelationshipPropertyKey() function
+   *
+   * @param rel_id
+   * @param key_name
+   * @returns
+   */
   async getRelationshipPropertyKey(
     rel_id: Nanoid,
     key_name: string,
   ): Promise<Nanoid> {
-    const propertyKeyId = await this.findPropertyKey(rel_id, key_name);
+    const propertyKeyId = await this.findRelationshipPropertyKey(
+      rel_id,
+      key_name,
+    );
 
     if (propertyKeyId) {
       return propertyKeyId;

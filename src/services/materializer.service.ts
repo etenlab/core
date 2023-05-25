@@ -29,7 +29,7 @@ export class MaterializerService {
         new Table({
           name: new_table_name.split('.')[0],
           columns: [
-            ...columns.map((col) => {
+            ...columns.map(col => {
               return {
                 name: JSON.parse(
                   col.propertyKeys[0].propertyValue.property_value,
@@ -61,7 +61,7 @@ export class MaterializerService {
 
       await queryRunner.query(
         `INSERT INTO '${new_table_name}' (${columns
-          .map((col) => {
+          .map(col => {
             return JSON.parse(col.propertyKeys[0].propertyValue.property_value)
               .value;
           })

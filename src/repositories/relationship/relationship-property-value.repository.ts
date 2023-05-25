@@ -12,6 +12,14 @@ export class RelationshipPropertyValueRepository {
     return this.dbService.dataSource.getRepository(RelationshipPropertyValue);
   }
 
+  /**
+   * This function create a relationship property value by give key_id, and key_value.
+   * Feature: relationship property value is immutable data, no update, and no duplicate.
+   *
+   * @param key_id
+   * @param key_value
+   * @returns
+   */
   async createRelationshipPropertyValue(
     key_id: Nanoid,
     key_value: unknown,
@@ -39,6 +47,15 @@ export class RelationshipPropertyValueRepository {
     return relationship_property_value.id;
   }
 
+  /**
+   * @deprecated
+   *
+   * This is wrong method, Never use it, and delete all you used
+   *
+   * @param key_id
+   * @param key_value
+   * @returns
+   */
   async setRelationshipPropertyValue(
     key_id: Nanoid,
     key_value: unknown,

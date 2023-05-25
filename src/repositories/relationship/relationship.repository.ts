@@ -1,7 +1,10 @@
+import { FindOptionsWhere } from 'typeorm';
+
 import { Node, Relationship, RelationshipType } from '@eten-lab/models';
 import { DbService } from '../../services/db.service';
 import { SyncService } from '../../services/sync.service';
 
+import { PropertyKeyConst } from '../../constants/graph.constant';
 export class RelationshipRepository {
   constructor(
     private readonly dbService: DbService,
@@ -67,7 +70,7 @@ export class RelationshipRepository {
       throw new Error(`Node not found '${node_2}'`);
     }
 
-    const translation = await this.repository.findOne({
+    const rel = await this.repository.findOne({
       where: {
         relationship_type: type_name,
         from_node_id: node_from.id,
@@ -75,7 +78,7 @@ export class RelationshipRepository {
       },
     });
 
-    return translation;
+    return rel;
   }
 
   async listAllRelationshipsByType(type_name: string): Promise<Relationship[]> {
@@ -88,35 +91,59 @@ export class RelationshipRepository {
     return relationships;
   }
 
-  async readRelationship(rel_id: Nanoid): Promise<Relationship | null> {
-    const relationship = await this.repository.findOneBy({
-      id: rel_id,
-    });
-
-    return relationship;
+  async readRelationship(
+    rel_id: Nanoid,
+    relations?: string[],
+    whereObj?: FindOptionsWhere<Relationship>,
+  ): Promise<Relationship | null> {
+    if (relations) {
+      if (whereObj) {
+        return this.repository.findOne({
+          relations,
+          where: whereObj,
+        });
+      } else {
+        return this.repository.findOne({
+          relations,
+          where: {
+            id: rel_id,
+          },
+        });
+      }
+    } else {
+      return this.repository.findOne({
+        where: {
+          id: rel_id,
+        },
+      });
+    }
   }
 
-  // async listRelatedNodes(node_id: string): Promise<any> {
-  //   const relationships_from = await this.repository.findBy({
-  //     to_id: node_id,
-  //   });
-  //   const related_from = relationships_from.map((rel) => {
-  //     return {
-  //       relationship: rel,
-  //       node: rel.from_node,
-  //     };
-  //   });
+  async getRelationshipPropertyValue(
+    relId: Nanoid,
+    propertyName: PropertyKeyConst,
+  ): Promise<unknown> {
+    const relEntity = await this.readRelationship(relId, [
+      'propertyKeys',
+      'propertyKeys.propertyValue',
+    ]);
 
-  //   const relationships_to = await this.repository.findBy({
-  //     from_id: node_id,
-  //   });
-  //   const related_to = relationships_to.map((rel) => {
-  //     return {
-  //       relationship: rel,
-  //       node: rel.to_node,
-  //     };
-  //   });
+    if (!relEntity) {
+      return null;
+    }
 
-  //   return related_from.concat(related_to);
-  // }
+    if (!relEntity.propertyKeys?.length || relEntity.propertyKeys?.length < 1) {
+      return null;
+    }
+
+    const propertyIdx = relEntity.propertyKeys.findIndex(
+      (pk) => pk.property_key === propertyName,
+    );
+
+    const resJson =
+      relEntity.propertyKeys[propertyIdx].propertyValue.property_value;
+    const res = JSON.parse(resJson).value;
+
+    return res;
+  }
 }
