@@ -1,4 +1,5 @@
-export { CRUDService, BaseType, baseSchema } from './crud-service';
+export { CRUDService, baseSchema } from './crud-service';
+export type { BaseType } from './crud-service';
 export { DbService } from './db.service';
 export { GraphFirstLayerService } from './graph-first-layer.service';
 export { GraphSecondLayerService } from './graph-second-layer.service';
