@@ -1,5 +1,5 @@
 import { DbService } from '../services/db.service';
-import { SyncSession } from '@eten-lab/models/src';
+import { SyncSession } from '@eten-lab/models';
 
 export class SyncSessionRepository {
   constructor(private readonly dbService: DbService) {}
