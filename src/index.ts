@@ -1,3 +1,3 @@
-export * as constants from './constants'
-export * as services from './services';
-export * as repositories from './repositories';
+export * from './constants';
+export * from './services';
+export * from './repositories';
