@@ -78,6 +78,10 @@ export enum PropertyKeyConst {
   LANGUAGE_TAG = 'language',
   DIALECT_TAG = 'dialect',
   REGION_TAG = 'region',
+  
+  MAP_FILE_ID = 'mapFileId',
+  EXT = 'ext',
+  IS_PROCESSING_FINISHED = 'is_processing_finished',
 }
 
 export const MainKeyName = {
