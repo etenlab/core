@@ -19,7 +19,7 @@ import {
   Relationship,
   RelationshipType,
 } from '@eten-lab/models';
-import { PropertyKeyConst } from '../constants/graph.constant';
+import { NodeTypeConst, PropertyKeyConst } from '../constants/graph.constant';
 
 export class GraphFirstLayerService {
   constructor(
@@ -291,5 +291,31 @@ export class GraphFirstLayerService {
       key_id,
       key_value,
     );
+  }
+  
+  async findNodeIdsOfTypeWithProperty(
+    nodeType: NodeTypeConst,
+    propertyKeyName: PropertyKeyConst,
+    includeProps?: Array<string>,
+    excludeProps?: Array<string>
+  ): Promise<Array<Nanoid>> {
+    const qb = this.nodeRepo.repository
+      .createQueryBuilder('node')
+      .select('node.node_id','node_id')
+      .leftJoin('node.nodeType', 'nodeType')
+      .leftJoin('node.propertyKeys', 'propertyKeys')
+      .leftJoin('propertyKeys.propertyValue', 'propertyValue')
+      .where('nodeType = :nodeType', { nodeType })
+      .andWhere('propertyKeys.property_key = :propertyKeyName', {propertyKeyName})
+    
+    if (includeProps?.length && includeProps.length > 0 ) {
+      qb.andWhere('propertyValue IN (:...includeProps)', { includeProps })
+    }
+    if (excludeProps?.length && excludeProps.length > 0 ) {
+      qb.andWhere('propertyValue NOT IN (:...excludeProps)', { excludeProps })
+    }
+    
+    const res = await qb.getRawMany()
+    return res
   }
 }
