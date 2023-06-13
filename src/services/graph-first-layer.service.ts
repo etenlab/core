@@ -293,29 +293,30 @@ export class GraphFirstLayerService {
     );
   }
   
-  async findNodeIdsOfTypeWithProperty(
+  async findExistingPropsForNode(
     nodeType: NodeTypeConst,
     propertyKeyName: PropertyKeyConst,
-    includeProps?: Array<string>,
-    excludeProps?: Array<string>
+    props: Array<string>,
+    restriction?: Array<{key:PropertyKeyConst, value: string}>,
   ): Promise<Array<Nanoid>> {
     const qb = this.nodeRepo.repository
       .createQueryBuilder('node')
-      .select('node.node_id','node_id')
-      .leftJoin('node.nodeType', 'nodeType')
       .leftJoin('node.propertyKeys', 'propertyKeys')
       .leftJoin('propertyKeys.propertyValue', 'propertyValue')
-      .where('nodeType = :nodeType', { nodeType })
+      .select('propertyValue.property_value','value')
+      .where('node.node_type = :nodeType', { nodeType })
       .andWhere('propertyKeys.property_key = :propertyKeyName', {propertyKeyName})
+      .andWhere('propertyValue.property_value IN (:...props)', { props })
+      .distinct(true)
     
-    if (includeProps?.length && includeProps.length > 0 ) {
-      qb.andWhere('propertyValue IN (:...includeProps)', { includeProps })
-    }
-    if (excludeProps?.length && excludeProps.length > 0 ) {
-      qb.andWhere('propertyValue NOT IN (:...excludeProps)', { excludeProps })
+    if (restriction && restriction.length > 0) {
+      restriction.forEach((r,i) => {
+        qb.andWhere(`propertyKeys.property_key = :key${i}`, {[`key${i}`]: r.key})
+        qb.andWhere(`propertyValue.property_value = :value${i}`, {[`value${i}`]: r.value})
+      })
     }
     
     const res = await qb.getRawMany()
-    return res
+    return res.map(r=>r.value)
   }
 }
