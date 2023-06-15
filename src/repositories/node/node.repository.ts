@@ -45,6 +45,30 @@ export class NodeRepository {
 
     return node;
   }
+  
+  async createNodes(type_name: string, amount: number): Promise<Array<Nanoid>> {
+    let nodeType = await this.dbService.dataSource
+      .getRepository(NodeType)
+      .findOneBy({ type_name });
+    if (nodeType === null) {
+      nodeType = await this.dbService.dataSource
+        .getRepository(NodeType)
+        .save({ type_name });
+    }
+    const nodeDtos = []
+    for (let i = 0; i < amount; i++) {
+      nodeDtos.push({
+        nodeType,
+        node_type: type_name,
+        sync_layer: this.syncService.syncLayer,
+      })
+    }
+
+    const newNodes = this.repository.create(nodeDtos);
+    const nodes = await this.repository.save(newNodes);
+
+    return nodes.map(n=>n.id);
+  }
 
   async listAllNodesByType(type_name: string): Promise<Node[]> {
     const nodes = await this.repository.find({

@@ -54,6 +54,24 @@ export class RelationshipRepository {
     return relationship;
   }
 
+  async createFromManyRelsNoChecks(
+    fromNodes: Array<Nanoid>,
+    node_2: Nanoid,
+    type_name: string,
+  ): Promise<Array<Relationship>> {
+    const relsData:Array<Partial<Relationship>> = fromNodes.map((n) => ({
+      from_node_id: n,
+      to_node_id: node_2,
+      relationship_type: type_name,
+      sync_layer: this.syncService.syncLayer,
+    }))
+
+    const new_relationship_instances = this.repository.create(relsData);
+    
+    const relationships = await this.repository.save(new_relationship_instances);
+    return relationships;
+  }
+
   async findRelationship(
     node_1: Nanoid,
     node_2: Nanoid,

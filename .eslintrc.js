@@ -2,7 +2,7 @@ module.exports = {
   env: {
     node: true,
     browser: true,
-    es2021: true,
+    es2020: true,
   },
   ignorePatterns: ['.eslintrc.js', 'README.md'],
   extends: [

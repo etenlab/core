@@ -51,7 +51,11 @@ export class GraphFirstLayerService {
   async createNode(type_name: string): Promise<Node> {
     return this.nodeRepo.createNode(type_name);
   }
-
+  
+  async createNodes(type_name: string, amount:number): Promise<Array<Nanoid>> {
+    return this.nodeRepo.createNodes(type_name, amount);
+  }
+  
   async readNode(
     node_id: Nanoid,
     relations?: string[],
@@ -116,6 +120,12 @@ export class GraphFirstLayerService {
     key_name: string,
   ): Promise<Nanoid> {
     return this.nodePropertyKeyRepo.createNodePropertyKey(node_id, key_name);
+  }
+  async createNodePropertyKeyNoChecks(
+    node_id: Nanoid,
+    key_name: string,
+  ): Promise<Nanoid> {
+    return this.nodePropertyKeyRepo.createNodePropertyKeyNoChekcs(node_id, key_name);
   }
 
   async findNodePropertyKey(
@@ -188,6 +198,18 @@ export class GraphFirstLayerService {
   ): Promise<Relationship> {
     return this.relationshipRepo.createRelationship(
       from_node_id,
+      to_node_id,
+      type_name,
+    );
+  }
+  
+  async createFromManyRelsNoChecks(
+    from_node_ids: Array<Nanoid>,
+    to_node_id: Nanoid,
+    type_name: string,
+  ): Promise<Array<Relationship>> {
+    return this.relationshipRepo.createFromManyRelsNoChecks(
+      from_node_ids,
       to_node_id,
       type_name,
     );

@@ -48,6 +48,29 @@ export class NodePropertyKeyRepository {
 
     return new_property_key.id;
   }
+  
+  /**
+   * No checks on dubpication (for performance reasons), use with caution!
+   */  
+  async createNodePropertyKeyNoChekcs(
+    node_id: Nanoid,
+    key_name: string,
+  ): Promise<Nanoid> {
+    
+    const new_property_key_instance = this.repository.create({
+      property_key: key_name,
+      node_id,
+      sync_layer: this.syncService.syncLayer,
+    });
+
+    const new_property_key = await this.repository.save(
+      new_property_key_instance,
+    );
+
+    return new_property_key.id;
+  }
+  
+
 
   async findNodePropertyKey(
     node_id: Nanoid,
