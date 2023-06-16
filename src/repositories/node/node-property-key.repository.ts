@@ -1,6 +1,7 @@
-import { Node, NodePropertyKey } from '@eten-lab/models';
+import { Node, NodePropertyKey, TableNameConst } from '@eten-lab/models';
 import { DbService } from '../../services/db.service';
 import { SyncService } from '../../services/sync.service';
+import { nanoid } from 'nanoid';
 
 export class NodePropertyKeyRepository {
   constructor(
@@ -56,18 +57,14 @@ export class NodePropertyKeyRepository {
     node_id: Nanoid,
     key_name: string,
   ): Promise<Nanoid> {
-    
-    const new_property_key_instance = this.repository.create({
-      property_key: key_name,
-      node_id,
-      sync_layer: this.syncService.syncLayer,
-    });
-
-    const new_property_key = await this.repository.save(
-      new_property_key_instance,
-    );
-
-    return new_property_key.id;
+    let insertNpkSQL = `
+      INSERT INTO ${TableNameConst.NODE_PROPERTY_KEYS} (node_property_key_id, property_key, node_id, updated_at, sync_layer)
+      VALUES
+    `
+    const id = nanoid()
+    insertNpkSQL += `('${id}','${key_name}','${node_id}','${new Date().toISOString()}',${this.syncService.syncLayer})`
+    await this.dbService.dataSource.query(insertNpkSQL)
+    return id;    
   }
   
 

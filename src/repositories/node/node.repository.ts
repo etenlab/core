@@ -2,13 +2,14 @@ import { FindOptionsWhere, In } from 'typeorm';
 
 import { DbService } from '../../services/db.service';
 import { SyncService } from '../../services/sync.service';
-import { Node, NodeType } from '@eten-lab/models';
+import { Node, NodeType, TableNameConst } from '@eten-lab/models';
 
 import {
   NodeTypeConst,
   PropertyKeyConst,
   RelationshipTypeConst,
 } from '../../constants/graph.constant';
+import { nanoid } from 'nanoid';
 export interface getNodesByTypeAndRelatedNodesParams {
   type: NodeTypeConst;
   from_node_id?: Nanoid;
@@ -55,19 +56,19 @@ export class NodeRepository {
         .getRepository(NodeType)
         .save({ type_name });
     }
-    const nodeDtos = []
+    let insertNodesSQL = `
+      INSERT INTO ${TableNameConst.NODES} (node_id, node_type, updated_at, sync_layer)
+      VALUES
+    `
+    let comma = ''
+    const ids:Nanoid[]=[]
     for (let i = 0; i < amount; i++) {
-      nodeDtos.push({
-        nodeType,
-        node_type: type_name,
-        sync_layer: this.syncService.syncLayer,
-      })
+      ids[i] = nanoid()
+      insertNodesSQL += comma + `('${ids[i]}','${type_name}','${new Date().toISOString()}',${this.syncService.syncLayer})`
+      comma=','
     }
-
-    const newNodes = this.repository.create(nodeDtos);
-    const nodes = await this.repository.save(newNodes);
-
-    return nodes.map(n=>n.id);
+    await this.dbService.dataSource.query(insertNodesSQL)
+    return ids;
   }
 
   async listAllNodesByType(type_name: string): Promise<Node[]> {

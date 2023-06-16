@@ -207,7 +207,7 @@ export class GraphFirstLayerService {
     from_node_ids: Array<Nanoid>,
     to_node_id: Nanoid,
     type_name: string,
-  ): Promise<Array<Relationship>> {
+  ): Promise<void> {
     return this.relationshipRepo.createFromManyRelsNoChecks(
       from_node_ids,
       to_node_id,

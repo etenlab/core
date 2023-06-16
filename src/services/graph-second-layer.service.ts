@@ -25,11 +25,10 @@ export class GraphSecondLayerService {
 
     const nodeIds = await this.firstLayerService.createNodes(type_name, objects.length);
     const nodePromises = [];
-    
     for (let i = 0; i < nodeIds.length; i++) {
-      // const keyIds = await this.firstLayerService.createNodeProperties(nodeIds[i], objects[i])
       nodePromises.push( this.addNewNodePropertiesNoChecks(nodeIds[i],objects[i]))
     }
+    await Promise.all(nodePromises)
 
     return nodeIds;
   }

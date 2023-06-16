@@ -1,6 +1,7 @@
 import { FindOptionsWhere } from 'typeorm';
+import { nanoid } from 'nanoid';
 
-import { Node, Relationship, RelationshipType } from '@eten-lab/models';
+import { Node, Relationship, RelationshipType, TableNameConst } from '@eten-lab/models';
 import { DbService } from '../../services/db.service';
 import { SyncService } from '../../services/sync.service';
 
@@ -58,7 +59,7 @@ export class RelationshipRepository {
     fromNodes: Array<Nanoid>,
     node_2: Nanoid,
     type_name: string,
-  ): Promise<Array<Relationship>> {
+  ): Promise<void> {
     const relsData:Array<Partial<Relationship>> = fromNodes.map((n) => ({
       from_node_id: n,
       to_node_id: node_2,
@@ -66,13 +67,17 @@ export class RelationshipRepository {
       sync_layer: this.syncService.syncLayer,
     }))
     
-    const p1 = performance.now()
-    const new_relationship_instances = this.repository.create(relsData);
-    const relationships = await this.repository.save(new_relationship_instances);
-    const p2 = performance.now()
-    console.log('PERFORMANCE: ', p2-p1)
-    
-    return relationships;
+    let insertRelationshipsSQL = `
+      INSERT INTO ${TableNameConst.RELATIONSHIPS} (sync_layer, relationship_id, relationship_type, from_node_id, to_node_id, updated_at)
+      VALUES 
+    `
+    let comma=''
+    for (const {from_node_id, to_node_id, relationship_type, sync_layer } of relsData) {
+      if (!from_node_id || !to_node_id || !relationship_type || isNaN(Number(sync_layer))) continue;
+      insertRelationshipsSQL += comma + `(${sync_layer}, '${nanoid()}','${relationship_type}','${from_node_id}','${to_node_id}','${new Date().toISOString()}')`
+      comma= ','
+    }
+    await this.dbService.dataSource.query(insertRelationshipsSQL)
   }
 
   async findRelationship(
