@@ -2,6 +2,8 @@ import { GraphFirstLayerService } from './graph-first-layer.service';
 
 import { Node, Relationship } from '@eten-lab/models';
 import { PropertyKeyConst } from '../constants/graph.constant';
+import { LoggerService } from './logger.service';
+const logger = new LoggerService()
 
 export class GraphSecondLayerService {
   constructor(private readonly firstLayerService: GraphFirstLayerService) {}
@@ -162,15 +164,22 @@ export class GraphSecondLayerService {
   async addNewNodePropertiesNoChecks(node_id: Nanoid, obj: object): Promise<void> {
 
     for (const [key, value] of Object.entries(obj)) {
+      const time100 = performance.now()
+      
       const property_key_id = await this.firstLayerService.createNodePropertyKeyNoChecks(
         node_id,
         key,
       );
+      const time200 = performance.now()
+      logger.trace({time200},' time200 - time100: ', time200 - time100 )
 
       await this.firstLayerService.createNodePropertyValue(
         property_key_id,
         value,
       );
+      const time300 = performance.now()
+      logger.trace({time300},' time300 - time200: ', time300 - time200 )
+      
     }
 
   }
