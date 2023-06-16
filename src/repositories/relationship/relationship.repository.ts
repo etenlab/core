@@ -65,10 +65,13 @@ export class RelationshipRepository {
       relationship_type: type_name,
       sync_layer: this.syncService.syncLayer,
     }))
-
-    const new_relationship_instances = this.repository.create(relsData);
     
+    const p1 = performance.now()
+    const new_relationship_instances = this.repository.create(relsData);
     const relationships = await this.repository.save(new_relationship_instances);
+    const p2 = performance.now()
+    console.log('PERFORMANCE: ', p2-p1)
+    
     return relationships;
   }
 
