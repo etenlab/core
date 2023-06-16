@@ -48,6 +48,7 @@ export class NodeRepository {
   }
   
   async createNodes(type_name: string, amount: number): Promise<Array<Nanoid>> {
+    if (isNaN(Number(amount)) || amount < 1) return [];
     let nodeType = await this.dbService.dataSource
       .getRepository(NodeType)
       .findOneBy({ type_name });
