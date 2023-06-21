@@ -28,5 +28,12 @@ export class DbService {
     this.startupSubscriptions.push(fn);
   }
 
+  /**
+   * Deletes all local database data. Use only with full understanding of consequences.
+   */  
+  public async resetAllData() {
+    await this.dataSource.synchronize(true)
+  }
+
   status() {}
 }

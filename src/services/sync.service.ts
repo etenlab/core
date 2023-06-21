@@ -333,4 +333,10 @@ export class SyncService {
 
     this.logger.info('Sync entries saved');
   }
+  
+  clearAllSyncInfo() {
+    localStorage.removeItem(CURRENT_SYNC_LAYER_KEY);
+    localStorage.removeItem(LAST_SYNC_LAYER_KEY);
+    localStorage.removeItem(LAST_SYNC_FROM_SERVER_KEY);
+  }
 }

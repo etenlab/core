@@ -2,13 +2,14 @@ import { FindOptionsWhere, In } from 'typeorm';
 
 import { DbService } from '../../services/db.service';
 import { SyncService } from '../../services/sync.service';
-import { Node, NodeType } from '@eten-lab/models';
+import { Node, NodeType, TableNameConst } from '@eten-lab/models';
 
 import {
   NodeTypeConst,
   PropertyKeyConst,
   RelationshipTypeConst,
 } from '../../constants/graph.constant';
+import { nanoid } from 'nanoid';
 export interface getNodesByTypeAndRelatedNodesParams {
   type: NodeTypeConst;
   from_node_id?: Nanoid;
@@ -44,6 +45,31 @@ export class NodeRepository {
     const node = await this.repository.save(new_node);
 
     return node;
+  }
+  
+  async createNodes(type_name: string, amount: number): Promise<Array<Nanoid>> {
+    if (isNaN(Number(amount)) || amount < 1) return [];
+    let nodeType = await this.dbService.dataSource
+      .getRepository(NodeType)
+      .findOneBy({ type_name });
+    if (nodeType === null) {
+      nodeType = await this.dbService.dataSource
+        .getRepository(NodeType)
+        .save({ type_name });
+    }
+    let insertNodesSQL = `
+      INSERT INTO ${TableNameConst.NODES} (node_id, node_type, updated_at, sync_layer)
+      VALUES
+    `
+    let comma = ''
+    const ids:Nanoid[]=[]
+    for (let i = 0; i < amount; i++) {
+      ids[i] = nanoid()
+      insertNodesSQL += comma + `('${ids[i]}','${type_name}','${new Date().toISOString()}',${this.syncService.syncLayer})`
+      comma=','
+    }
+    await this.dbService.dataSource.query(insertNodesSQL)
+    return ids;
   }
 
   async listAllNodesByType(type_name: string): Promise<Node[]> {

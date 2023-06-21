@@ -19,7 +19,7 @@ import {
   Relationship,
   RelationshipType,
 } from '@eten-lab/models';
-import { PropertyKeyConst } from '../constants/graph.constant';
+import { NodeTypeConst, PropertyKeyConst } from '../constants/graph.constant';
 
 export class GraphFirstLayerService {
   constructor(
@@ -51,7 +51,11 @@ export class GraphFirstLayerService {
   async createNode(type_name: string): Promise<Node> {
     return this.nodeRepo.createNode(type_name);
   }
-
+  
+  async createNodes(type_name: string, amount:number): Promise<Array<Nanoid>> {
+    return this.nodeRepo.createNodes(type_name, amount);
+  }
+  
   async readNode(
     node_id: Nanoid,
     relations?: string[],
@@ -116,6 +120,12 @@ export class GraphFirstLayerService {
     key_name: string,
   ): Promise<Nanoid> {
     return this.nodePropertyKeyRepo.createNodePropertyKey(node_id, key_name);
+  }
+  async createNodePropertyKeyNoChecks(
+    node_id: Nanoid,
+    key_name: string,
+  ): Promise<Nanoid> {
+    return this.nodePropertyKeyRepo.createNodePropertyKeyNoChekcs(node_id, key_name);
   }
 
   async findNodePropertyKey(
@@ -188,6 +198,18 @@ export class GraphFirstLayerService {
   ): Promise<Relationship> {
     return this.relationshipRepo.createRelationship(
       from_node_id,
+      to_node_id,
+      type_name,
+    );
+  }
+  
+  async createFromManyRelsNoChecks(
+    from_node_ids: Array<Nanoid>,
+    to_node_id: Nanoid,
+    type_name: string,
+  ): Promise<void> {
+    return this.relationshipRepo.createFromManyRelsNoChecks(
+      from_node_ids,
       to_node_id,
       type_name,
     );
@@ -291,5 +313,41 @@ export class GraphFirstLayerService {
       key_id,
       key_value,
     );
+  }
+  
+  async findExistingNodesWithProps(
+    nodeType: NodeTypeConst,
+    propertyKeyName: PropertyKeyConst,
+    props: Array<string>,
+    restriction?: Array<{ key: PropertyKeyConst, value: string }>,
+  ): Promise<Array<{ value: string, nodeId: Nanoid }>> {
+    const qb = this.nodeRepo.repository
+      .createQueryBuilder('node')
+      .leftJoin('node.propertyKeys', 'propertyKeys')
+      .leftJoin('propertyKeys.propertyValue', 'propertyValue')
+      .select('propertyValue.property_value', 'value')
+      .addSelect('node.node_id', 'nodeId')
+      .where('node.node_type = :nodeType', { nodeType })
+      .andWhere('propertyKeys.property_key = :propertyKeyName', { propertyKeyName })
+      .andWhere('propertyValue.property_value IN (:...props)', { props })
+
+    if (restriction && restriction.length > 0) {
+      qb.andWhere((subQb) => {
+        const subQ = subQb.subQuery()
+          .select('nodeI.node_id')
+          .from(Node, 'nodeI')
+          .leftJoin('nodeI.propertyKeys', 'propertyKeysI')
+          .leftJoin('propertyKeysI.propertyValue', 'propertyValueI')
+        restriction.forEach((r, i) => {
+          subQ.andWhere(`propertyKeysI.property_key = :key${i}`, { [`key${i}`]: r.key })
+          subQ.andWhere(`propertyValueI.property_value = :value${i}`, { [`value${i}`]: r.value })
+        })
+        const subQueryFull = 'node.node_id IN ' + subQ.getQuery()
+        return  subQueryFull
+      })
+    }
+
+    const res = await qb.distinct().getRawMany()
+    return res.map(r => ({ value: r.value, nodeId: r.nodeId }))
   }
 }

@@ -2,6 +2,8 @@ import { GraphFirstLayerService } from './graph-first-layer.service';
 
 import { Node, Relationship } from '@eten-lab/models';
 import { PropertyKeyConst } from '../constants/graph.constant';
+import { LoggerService } from './logger.service';
+const logger = new LoggerService()
 
 export class GraphSecondLayerService {
   constructor(private readonly firstLayerService: GraphFirstLayerService) {}
@@ -19,6 +21,18 @@ export class GraphSecondLayerService {
     }
 
     return node;
+  }
+
+  async createNodesFromObjects(type_name: string, objects: Array<any>): Promise<Array<Nanoid>> {
+
+    const nodeIds = await this.firstLayerService.createNodes(type_name, objects.length);
+    const nodePromises = [];
+    for (let i = 0; i < nodeIds.length; i++) {
+      nodePromises.push( this.addNewNodePropertiesNoChecks(nodeIds[i],objects[i]))
+    }
+    await Promise.all(nodePromises)
+
+    return nodeIds;
   }
 
   async createRelationshipFromObject(
@@ -101,6 +115,7 @@ export class GraphSecondLayerService {
    * Be careful, if the object property already exists in the node, an error will be thrown.
    */
   async addNewNodeProperties(node_id: Nanoid, obj: object): Promise<Node> {
+    // TODO: looks like checks on node existance are duplicated gere an in property addition. Can be optimized.
     const node = await this.firstLayerService.readNode(node_id);
 
     if (node === null) {
@@ -140,6 +155,33 @@ export class GraphSecondLayerService {
     }
 
     return node;
+  }
+
+  /**
+   * This function adds a new node property to the given object.
+   * Be careful, if the object property already exists in the node, another one will be created
+   */
+  async addNewNodePropertiesNoChecks(node_id: Nanoid, obj: object): Promise<void> {
+
+    for (const [key, value] of Object.entries(obj)) {
+      const time100 = performance.now()
+      
+      const property_key_id = await this.firstLayerService.createNodePropertyKeyNoChecks(
+        node_id,
+        key,
+      );
+      const time200 = performance.now()
+      logger.trace({time200},' time200 - time100: ', time200 - time100 )
+
+      await this.firstLayerService.createNodePropertyValue(
+        property_key_id,
+        value,
+      );
+      const time300 = performance.now()
+      logger.trace({time300},' time300 - time200: ', time300 - time200 )
+      
+    }
+
   }
 
   /**
