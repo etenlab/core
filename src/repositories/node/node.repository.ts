@@ -14,6 +14,7 @@ export interface getNodesByTypeAndRelatedNodesParams {
   type: NodeTypeConst;
   from_node_id?: Nanoid;
   to_node_id?: Nanoid;
+  onlyWithProps?: { key: string; value: string }[]
 }
 
 export class NodeRepository {
@@ -306,6 +307,7 @@ export class NodeRepository {
     type,
     from_node_id,
     to_node_id,
+    onlyWithProps,
   }: getNodesByTypeAndRelatedNodesParams): Promise<Node[]> {
     try {
       const foundNodesQB = await this.repository
@@ -331,6 +333,20 @@ export class NodeRepository {
         foundNodesQB.andWhere('toNodeRelationships.to_node_id = :to_node_id', {
           to_node_id,
         });
+      
+      if (onlyWithProps) {
+        onlyWithProps.forEach(({ key, value }, i) => {
+          const jsonValue = JSON.stringify({ value })
+          foundNodesQB.andWhere(`propertyKeys.property_key = :key${i}`, {
+            [`key${i}`]: key
+          });
+          foundNodesQB.andWhere(`propertyValue.property_value = :value${i}`, {
+            [`value${i}`]: jsonValue
+          });                  
+        })
+      }
+      
+      
       return foundNodesQB.getMany();
     } catch (err) {
       console.error(err);

@@ -106,11 +106,13 @@ export class GraphFirstLayerService {
     type,
     from_node_id,
     to_node_id,
+    onlyWithProps,
   }: getNodesByTypeAndRelatedNodesParams): Promise<Node[]> {
     return this.nodeRepo.getNodesByTypeAndRelatedNodes({
       type,
       from_node_id,
       to_node_id,
+      onlyWithProps,
     });
   }
 

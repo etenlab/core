@@ -87,4 +87,5 @@ export enum PropertyKeyConst {
 export const MainKeyName = {
   [NodeTypeConst.WORD]: PropertyKeyConst.WORD,
   [NodeTypeConst.PHRASE]: PropertyKeyConst.PHRASE,
+  [NodeTypeConst.DEFINITION]: PropertyKeyConst.DEFINITION,
 };
