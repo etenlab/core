@@ -240,10 +240,10 @@ export class NodeRepository {
       .map(
         ({ key, value }) =>
           `(
-              pk.property_key = '${key}' 
-              and pv.property_value = '${JSON.stringify({
+              pk.property_key = \'${key}\' 
+              and pv.property_value = \'${JSON.stringify({
                 value: value,
-              })}'
+              })}\'
             )`,
       )
       .join(' or ');
@@ -268,7 +268,7 @@ export class NodeRepository {
               count(pk.property_key) = ${props.length}
           ) as npk on nodes.node_id = npk.node_id 
         where 
-          nodes.node_type = '${type}';
+          nodes.node_type = \'${type}\';
       `;
 
     const nodes: [{ node_id: Nanoid }] = await this.repository.query(sqlStr);
