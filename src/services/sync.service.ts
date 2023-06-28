@@ -93,7 +93,7 @@ const syncTables: SyncTable[] = [
   },
   {
     entity: Candidate,
-    tableName: TableNameConst.ELECTIONS,
+    tableName: TableNameConst.CANDIDATES,
     pkColumn: 'candidate_id',
     pkProperty: 'id',
   },
