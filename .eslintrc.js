@@ -18,13 +18,13 @@ module.exports = {
     tsconfigRootDir: __dirname,
     extraFileExtensions: ['.md'],
   },
-  plugins: ['@typescript-eslint','prettier'],
+  plugins: ['@typescript-eslint', 'prettier'],
   rules: {
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/dot-notation': 'error',
-    '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/no-explicit-any': 'error',
     'prettier/prettier': [
       'error',
       {

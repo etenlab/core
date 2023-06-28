@@ -1,23 +1,30 @@
+import axios from 'axios';
+import { ObjectLiteral, EntityTarget } from 'typeorm';
+
 import {
   Node,
   NodeType,
   NodePropertyKey,
   NodePropertyValue,
-} from '@eten-lab/models';
-import axios from 'axios';
-import {
   Relationship,
   RelationshipType,
   RelationshipPropertyKey,
   RelationshipPropertyValue,
+  ElectionType,
+  Election,
+  Candidate,
+  Vote,
 } from '@eten-lab/models';
-import { DbService } from './db.service';
+
 import { SyncSessionRepository } from '../repositories/sync-session.repository';
+
+import { DbService } from './db.service';
 import { LoggerService } from './logger.service';
 
+import { TableNameConst } from '@eten-lab/models';
+
 interface SyncTable {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  entity: any;
+  entity: unknown;
   tableName: string;
   pkColumn: string; // since we have long column name (i.e. user.user_id) and short entiti's property name (i.e. user.id)
   pkProperty: string; // we want to distinguish them  explicitly.
@@ -26,50 +33,74 @@ interface SyncTable {
 const syncTables: SyncTable[] = [
   {
     entity: Node,
-    tableName: 'nodes',
+    tableName: TableNameConst.NODES,
     pkColumn: 'node_id',
     pkProperty: 'id',
   },
   {
     entity: NodeType,
-    tableName: 'node_types',
+    tableName: TableNameConst.NODE_TYPES,
     pkColumn: 'type_name',
     pkProperty: 'type_name',
   },
   {
     entity: NodePropertyKey,
-    tableName: 'node_property_keys',
+    tableName: TableNameConst.NODE_PROPERTY_KEYS,
     pkColumn: 'node_property_key_id',
     pkProperty: 'id',
   },
   {
     entity: NodePropertyValue,
-    tableName: 'node_property_values',
+    tableName: TableNameConst.NODE_PROPERTY_VALUES,
     pkColumn: 'node_property_value_id',
     pkProperty: 'id',
   },
   {
     entity: Relationship,
-    tableName: 'relationships',
+    tableName: TableNameConst.RELATIONSHIPS,
     pkColumn: 'relationship_id',
     pkProperty: 'id',
   },
   {
     entity: RelationshipType,
-    tableName: 'relationship_types',
+    tableName: TableNameConst.RELATIONSHIP_TYPES,
     pkColumn: 'type_name',
     pkProperty: 'type_name',
   },
   {
     entity: RelationshipPropertyKey,
-    tableName: 'relationship_property_keys',
+    tableName: TableNameConst.RELATIONSHIP_PROPERTY_KEYS,
     pkColumn: 'relationship_property_key_id',
     pkProperty: 'id',
   },
   {
     entity: RelationshipPropertyValue,
-    tableName: 'relationship_property_values',
+    tableName: TableNameConst.RELATIONSHIP_PROPERTY_VALUES,
     pkColumn: 'relationship_property_value_id',
+    pkProperty: 'id',
+  },
+  {
+    entity: ElectionType,
+    tableName: TableNameConst.ELECTION_TYPES,
+    pkColumn: 'type_name',
+    pkProperty: 'type_name',
+  },
+  {
+    entity: Election,
+    tableName: TableNameConst.ELECTIONS,
+    pkColumn: 'election_id',
+    pkProperty: 'id',
+  },
+  {
+    entity: Candidate,
+    tableName: TableNameConst.ELECTIONS,
+    pkColumn: 'candidate_id',
+    pkProperty: 'id',
+  },
+  {
+    entity: Vote,
+    tableName: TableNameConst.VOTES,
+    pkColumn: 'vote_id',
     pkProperty: 'id',
   },
 ];
@@ -146,7 +177,7 @@ export class SyncService {
 
     for (const table of syncTables) {
       const items = await this.dbService.dataSource
-        .getRepository(table.entity)
+        .getRepository(table.entity as EntityTarget<ObjectLiteral>)
         .createQueryBuilder()
         .select('*')
         .where('sync_layer >= :fromSyncLayer', {
@@ -296,9 +327,10 @@ export class SyncService {
 
       for (const row of rows) {
         const pkValue = row[pkColumn];
+        const updatedAt = row['updated_at'];
 
         const existing = await this.dbService.dataSource
-          .getRepository(entity)
+          .getRepository(entity as EntityTarget<ObjectLiteral>)
           .createQueryBuilder()
           .select('*')
           .where(`${pkColumn} = :pkValue`, {
@@ -308,23 +340,26 @@ export class SyncService {
 
         if (existing.length) {
           const q = this.dbService.dataSource
-            .getRepository(entity)
+            .getRepository(entity as EntityTarget<ObjectLiteral>)
             .createQueryBuilder()
-            .update(entity)
-            .set({ [pkProperty]: pkValue }) //typeorm wants propery name as key here
+            .update(entity as EntityTarget<ObjectLiteral>)
+            .set({ ...row, [pkProperty]: pkValue }) //typeorm wants propery name as key here
             //typeorm wants column name as clause here
             .where(`${pkColumn} = :pkValue`, {
               pkValue,
+            })
+            .andWhere(`updated_at < :updatedAt`, {
+              updatedAt,
             });
           this.logger.info(q.getSql(), q.getParameters());
           await q.execute();
         } else {
           const q = this.dbService.dataSource
-            .getRepository(entity)
+            .getRepository(entity as EntityTarget<ObjectLiteral>)
             .createQueryBuilder()
             .insert()
-            .into(entity)
-            .values({ ...row, [pkProperty]: row[pkColumn] }); //typeorm wants propery name as key here
+            .into(entity as EntityTarget<ObjectLiteral>)
+            .values({ ...row, [pkProperty]: pkValue }); //typeorm wants propery name as key here
           this.logger.info(q.getSql(), q.getParameters());
           await q.execute();
         }
@@ -333,7 +368,7 @@ export class SyncService {
 
     this.logger.info('Sync entries saved');
   }
-  
+
   clearAllSyncInfo() {
     localStorage.removeItem(CURRENT_SYNC_LAYER_KEY);
     localStorage.removeItem(LAST_SYNC_LAYER_KEY);
