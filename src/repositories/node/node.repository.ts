@@ -241,16 +241,21 @@ export class NodeRepository {
     type: string,
     props: { key: string; value: unknown }[],
   ): Promise<Nanoid[]> {
+    const params = [];
     const conditionStr = props
-      .map(
-        ({ key, value }) =>
-          `(
-              pk.property_key = \'${key}\' 
-              and pv.property_value = \'${JSON.stringify({
-                value: value,
-              })}\'
-            )`,
-      )
+      .map(({ key, value }) => {
+        const query = `(
+              pk.property_key = $${params.length + 1} 
+              and pv.property_value = $${params.length + 2}
+            )`;
+        params.push(key);
+        params.push(
+          JSON.stringify({
+            value: value,
+          }),
+        );
+        return query;
+      })
       .join(' or ');
 
     const sqlStr = `
@@ -270,13 +275,19 @@ export class NodeRepository {
             group by 
               pk.node_id 
             having 
-              count(pk.property_key) = ${props.length}
+              count(pk.property_key) = $${params.length + 1}
           ) as npk on nodes.node_id = npk.node_id 
         where 
-          nodes.node_type = \'${type}\';
+          nodes.node_type = $${params.length + 2};
       `;
 
-    const nodes: [{ node_id: Nanoid }] = await this.repository.query(sqlStr);
+    params.push(props.length);
+    params.push(type);
+
+    const nodes: [{ node_id: Nanoid }] = await this.repository.query(
+      sqlStr,
+      params,
+    );
 
     if (!nodes) {
       return [];
