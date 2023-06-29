@@ -33,7 +33,10 @@ export class ElectionRepository {
     if (electionType === null) {
       await this.dbService.dataSource
         .getRepository(ElectionType)
-        .save({ type_name: election_type });
+        .save({
+          type_name: election_type,
+          sync_layer: this.syncService.syncLayer,
+        });
     }
 
     // Checks an Election that already exists, and returns the Election if yes.

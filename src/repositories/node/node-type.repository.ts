@@ -13,12 +13,16 @@ export class NodeTypeRepository {
   }
 
   async createNodeType(type_name: string): Promise<string> {
-    const node_type = await this.repository.save({
-      type_name,
-      sync_layer: this.syncService.syncLayer,
-    });
+    let nodeType = await this.repository.findOneBy({ type_name });
 
-    return node_type.type_name;
+    if (nodeType === null) {
+      nodeType = await this.repository.save({
+        type_name,
+        sync_layer: this.syncService.syncLayer,
+      });
+    }
+
+    return nodeType.type_name;
   }
 
   async listNodeTypes(): Promise<NodeType[]> {

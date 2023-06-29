@@ -14,7 +14,7 @@ export interface getNodesByTypeAndRelatedNodesParams {
   type: NodeTypeConst;
   from_node_id?: Nanoid;
   to_node_id?: Nanoid;
-  onlyWithProps?: { key: string; value: string }[]
+  onlyWithProps?: { key: string; value: string }[];
 }
 
 export class NodeRepository {
@@ -35,7 +35,7 @@ export class NodeRepository {
     if (nodeType === null) {
       nodeType = await this.dbService.dataSource
         .getRepository(NodeType)
-        .save({ type_name });
+        .save({ type_name, sync_layer: this.syncService.syncLayer });
     }
 
     const new_node = this.repository.create({
@@ -47,7 +47,7 @@ export class NodeRepository {
 
     return node;
   }
-  
+
   async createNodes(type_name: string, amount: number): Promise<Array<Nanoid>> {
     if (isNaN(Number(amount)) || amount < 1) return [];
     let nodeType = await this.dbService.dataSource
@@ -56,20 +56,24 @@ export class NodeRepository {
     if (nodeType === null) {
       nodeType = await this.dbService.dataSource
         .getRepository(NodeType)
-        .save({ type_name });
+        .save({ type_name, sync_layer: this.syncService.syncLayer });
     }
     let insertNodesSQL = `
       INSERT INTO ${TableNameConst.NODES} (node_id, node_type, updated_at, sync_layer)
       VALUES
-    `
-    let comma = ''
-    const ids:Nanoid[]=[]
+    `;
+    let comma = '';
+    const ids: Nanoid[] = [];
     for (let i = 0; i < amount; i++) {
-      ids[i] = nanoid()
-      insertNodesSQL += comma + `('${ids[i]}','${type_name}','${new Date().toISOString()}',${this.syncService.syncLayer})`
-      comma=','
+      ids[i] = nanoid();
+      insertNodesSQL +=
+        comma +
+        `('${ids[i]}','${type_name}','${new Date().toISOString()}',${
+          this.syncService.syncLayer
+        })`;
+      comma = ',';
     }
-    await this.dbService.dataSource.query(insertNodesSQL)
+    await this.dbService.dataSource.query(insertNodesSQL);
     return ids;
   }
 
@@ -333,20 +337,19 @@ export class NodeRepository {
         foundNodesQB.andWhere('toNodeRelationships.to_node_id = :to_node_id', {
           to_node_id,
         });
-      
+
       if (onlyWithProps) {
         onlyWithProps.forEach(({ key, value }, i) => {
-          const jsonValue = JSON.stringify({ value })
+          const jsonValue = JSON.stringify({ value });
           foundNodesQB.andWhere(`propertyKeys.property_key = :key${i}`, {
-            [`key${i}`]: key
+            [`key${i}`]: key,
           });
           foundNodesQB.andWhere(`propertyValue.property_value = :value${i}`, {
-            [`value${i}`]: jsonValue
-          });                  
-        })
+            [`value${i}`]: jsonValue,
+          });
+        });
       }
-      
-      
+
       return foundNodesQB.getMany();
     } catch (err) {
       console.error(err);

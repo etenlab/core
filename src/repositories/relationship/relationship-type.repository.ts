@@ -13,10 +13,14 @@ export class RelationshipTypeRepository {
   }
 
   async createRelationshipType(type_name: string): Promise<string> {
-    const relationship_type = await this.repository.save({
-      type_name,
-      sync_layer: this.syncService.syncLayer,
-    } as RelationshipType);
+    let relationship_type = await this.repository.findOneBy({ type_name });
+
+    if (relationship_type === null) {
+      relationship_type = await this.repository.save({
+        type_name,
+        sync_layer: this.syncService.syncLayer,
+      } as RelationshipType);
+    }
 
     return relationship_type.type_name;
   }
