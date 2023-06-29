@@ -74,7 +74,8 @@ export class VoteRepository {
   }
 
   async getVotesStats(candidateId: Nanoid): Promise<VotesStatsRow> {
-    const result: VotesStatsRow[] = await this.repository.query(`
+    const result: VotesStatsRow[] = await this.repository.query(
+      `
     SELECT 
       v.candidate_id as candidateId, 
       COUNT(
@@ -86,13 +87,15 @@ export class VoteRepository {
     FROM 
       votes AS v 
     WHERE 
-      v.candidate_id = '${candidateId}'
+      v.candidate_id = $1
     GROUP BY 
       v.candidate_id 
     ORDER BY 
       COUNT(
         CASE WHEN v.vote = true THEN 1 WHEN v.vote = false THEN 0 ELSE null END
-      ) desc;`);
+      ) desc;`,
+      [candidateId],
+    );
 
     if (result.length === 0) {
       return {

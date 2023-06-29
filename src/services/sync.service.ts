@@ -327,41 +327,29 @@ export class SyncService {
 
       for (const row of rows) {
         const pkValue = row[pkColumn];
-        const updatedAt = row['updated_at'];
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+
+        delete row[pkColumn];
 
         const existing = await this.dbService.dataSource
           .getRepository(entity as EntityTarget<ObjectLiteral>)
-          .createQueryBuilder()
-          .select('*')
-          .where(`${pkColumn} = :pkValue`, {
-            pkValue,
-          })
-          .execute();
+          .find({
+            where: {
+              [pkProperty]: pkValue,
+            },
+          });
 
         if (existing.length) {
-          const q = this.dbService.dataSource
+          this.dbService.dataSource
             .getRepository(entity as EntityTarget<ObjectLiteral>)
-            .createQueryBuilder()
-            .update(entity as EntityTarget<ObjectLiteral>)
-            .set({ ...row, [pkProperty]: pkValue }) //typeorm wants propery name as key here
-            //typeorm wants column name as clause here
-            .where(`${pkColumn} = :pkValue`, {
-              pkValue,
-            })
-            .andWhere(`updated_at < :updatedAt`, {
-              updatedAt,
-            });
-          this.logger.info(q.getSql(), q.getParameters());
-          await q.execute();
+            .update(
+              { [pkProperty]: pkValue },
+              { ...row, [pkProperty]: pkValue },
+            );
         } else {
-          const q = this.dbService.dataSource
+          this.dbService.dataSource
             .getRepository(entity as EntityTarget<ObjectLiteral>)
-            .createQueryBuilder()
-            .insert()
-            .into(entity as EntityTarget<ObjectLiteral>)
-            .values({ ...row, [pkProperty]: pkValue }); //typeorm wants propery name as key here
-          this.logger.info(q.getSql(), q.getParameters());
-          await q.execute();
+            .insert({ ...row, [pkProperty]: pkValue });
         }
       }
     }

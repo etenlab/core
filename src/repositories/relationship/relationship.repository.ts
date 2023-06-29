@@ -72,6 +72,16 @@ export class RelationshipRepository {
       sync_layer: this.syncService.syncLayer,
     }));
 
+    let relType = await this.dbService.dataSource
+      .getRepository(RelationshipType)
+      .findOneBy({ type_name });
+
+    if (relType === null) {
+      relType = await this.dbService.dataSource
+        .getRepository(RelationshipType)
+        .save({ type_name, sync_layer: this.syncService.syncLayer });
+    }
+
     let insertRelationshipsSQL = `
       INSERT INTO ${TableNameConst.RELATIONSHIPS} (sync_layer, relationship_id, relationship_type, from_node_id, to_node_id, updated_at)
       VALUES 
