@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { ObjectLiteral, EntityTarget } from 'typeorm';
+import pako from 'pako';
+import buffer from 'buffer';
 
 import {
   Node,
@@ -110,6 +112,21 @@ interface SyncEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rows: any[];
 }
+
+export type DatabaseDTO = {
+  [TableNameConst.NODE_TYPES]: unknown[];
+  [TableNameConst.NODES]: unknown[];
+  [TableNameConst.NODE_PROPERTY_KEYS]: unknown[];
+  [TableNameConst.NODE_PROPERTY_VALUES]: unknown[];
+  [TableNameConst.RELATIONSHIP_TYPES]: unknown[];
+  [TableNameConst.RELATIONSHIPS]: unknown[];
+  [TableNameConst.RELATIONSHIP_PROPERTY_KEYS]: unknown[];
+  [TableNameConst.RELATIONSHIP_PROPERTY_VALUES]: unknown[];
+  [TableNameConst.ELECTION_TYPES]: unknown[];
+  [TableNameConst.ELECTIONS]: unknown[];
+  [TableNameConst.CANDIDATES]: unknown[];
+  [TableNameConst.VOTES]: unknown[];
+};
 
 const CURRENT_SYNC_LAYER_KEY = 'syncLayer';
 const LAST_SYNC_LAYER_KEY = 'lastSyncLayer';
@@ -327,9 +344,10 @@ export class SyncService {
 
       for (const row of rows) {
         const pkValue = row[pkColumn];
-        // eslint-disable-next-line @typescript-eslint/dot-notation
 
         delete row[pkColumn];
+
+        row[pkProperty] = pkValue;
 
         const existing = await this.dbService.dataSource
           .getRepository(entity as EntityTarget<ObjectLiteral>)
@@ -342,19 +360,206 @@ export class SyncService {
         if (existing.length) {
           this.dbService.dataSource
             .getRepository(entity as EntityTarget<ObjectLiteral>)
-            .update(
-              { [pkProperty]: pkValue },
-              { ...row, [pkProperty]: pkValue },
-            );
+            .update({ [pkProperty]: pkValue }, { ...row });
         } else {
           this.dbService.dataSource
             .getRepository(entity as EntityTarget<ObjectLiteral>)
-            .insert({ ...row, [pkProperty]: pkValue });
+            .insert({ ...row });
         }
       }
     }
 
     this.logger.info('Sync entries saved');
+  }
+
+  async getGzipJsonDB() {
+    const db: DatabaseDTO = {
+      [TableNameConst.NODE_TYPES]: [],
+      [TableNameConst.NODES]: [],
+      [TableNameConst.NODE_PROPERTY_KEYS]: [],
+      [TableNameConst.NODE_PROPERTY_VALUES]: [],
+      [TableNameConst.RELATIONSHIP_TYPES]: [],
+      [TableNameConst.RELATIONSHIPS]: [],
+      [TableNameConst.RELATIONSHIP_PROPERTY_KEYS]: [],
+      [TableNameConst.RELATIONSHIP_PROPERTY_VALUES]: [],
+      [TableNameConst.ELECTION_TYPES]: [],
+      [TableNameConst.ELECTIONS]: [],
+      [TableNameConst.CANDIDATES]: [],
+      [TableNameConst.VOTES]: [],
+    };
+
+    for (const table of syncTables) {
+      const items = await this.dbService.dataSource
+        .getRepository(table.entity as EntityTarget<ObjectLiteral>)
+        .createQueryBuilder()
+        .select('*')
+        .execute();
+
+      if (!items.length) continue;
+
+      for (const item of items) {
+        delete item.sync_layer;
+        if (table.tableName === TableNameConst.ELECTIONS) {
+          if (item.site_text) {
+            item.site_text = true;
+          }
+          if (item.site_text_translation) {
+            item.site_text_translation = true;
+          }
+        }
+      }
+
+      db[table.tableName as keyof typeof db] = items;
+    }
+
+    const dbJson = {
+      lastSync: this.getLastSyncFromServerTime(),
+      db,
+    };
+
+    const compressed = pako.deflate(JSON.stringify(dbJson));
+
+    const blob = new Blob([compressed], {
+      type: 'text/plain',
+    });
+
+    const file = new File([blob], 'db.json.gz');
+
+    return file;
+  }
+
+  async syncOutViaJsonDB() {
+    const toSyncLayer = this.currentSyncLayer;
+    const fromSyncLayer = this.lastLayerSync + 1;
+    this.incrementSyncCounter();
+    this.logger.info(`Starting sync out via db.json...`);
+
+    const file = await this.getGzipJsonDB();
+
+    const sessionId = await this.syncSessionRepository.createSyncSession(
+      fromSyncLayer,
+      toSyncLayer,
+    );
+
+    try {
+      await this.syncToServerViaJson(file);
+    } catch (err) {
+      await this.syncSessionRepository.completeSyncSession(
+        sessionId,
+        new Error(String(err)),
+      );
+      throw err;
+    }
+
+    await this.syncSessionRepository.completeSyncSession(sessionId);
+
+    this.setLastSyncLayer(toSyncLayer);
+  }
+
+  private async syncToServerViaJson(file: File) {
+    this.logger.info('Starting sync out...');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post(
+        `${this.serverUrl}/sync/to-server-via-json`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data;',
+            'Content-Disposition': 'form-data; name="map"; filename="db.json"',
+          },
+        },
+      );
+
+      await this.saveSyncEntriesViaJson(response.data);
+    } catch (err) {
+      this.logger.error('Sync failed');
+
+      throw err;
+    }
+  }
+
+  async syncInViaJson() {
+    this.logger.info('Starting sync in via db.json...');
+
+    try {
+      const response = await axios.get(
+        `${this.serverUrl}/sync/from-server-via-json`,
+      );
+
+      await this.saveSyncEntriesViaJson(response.data);
+
+      return;
+    } catch (err) {
+      this.logger.error('Sync failed');
+
+      throw err;
+    }
+  }
+
+  async syncInViaJsonFile(file: File) {
+    this.logger.info('Starting sync in via db.json.gz...');
+
+    let dbJson: {
+      lastSync: string;
+      db: DatabaseDTO;
+    };
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      dbJson = JSON.parse(pako.inflate(arrayBuffer, { to: 'string' }));
+    } catch (err) {
+      this.logger.error('inflate error', err);
+      return;
+    }
+
+    const entries: SyncEntry[] = Object.keys(dbJson.db).map(key => {
+      return {
+        table: key,
+        rows: dbJson.db[key as keyof typeof dbJson.db],
+      };
+    });
+
+    await this.saveSyncEntries(entries);
+
+    this.setLastSyncFromServerTime(dbJson.lastSync);
+  }
+
+  /**
+   *
+   * @param entries - Note: entries.rows has raw column names. We must pay attention on correct composition typeOrm
+   * query builder, especially with primary keys.
+   */
+  private async saveSyncEntriesViaJson(data: string) {
+    let dbJson: {
+      lastSync: string;
+      db: DatabaseDTO;
+    };
+
+    try {
+      const uint8array = buffer.Buffer.from(data, 'binary');
+      dbJson = JSON.parse(pako.inflate(uint8array, { to: 'string' })) as {
+        lastSync: string;
+        db: DatabaseDTO;
+      };
+    } catch (err) {
+      this.logger.error('inflate error', err);
+      return;
+    }
+
+    const entries: SyncEntry[] = Object.keys(dbJson.db).map(key => {
+      return {
+        table: key,
+        rows: dbJson.db[key as keyof typeof dbJson.db],
+      };
+    });
+
+    await this.saveSyncEntries(entries);
+
+    this.setLastSyncFromServerTime(dbJson.lastSync);
   }
 
   clearAllSyncInfo() {
