@@ -36,8 +36,12 @@ export enum RelationshipTypeConst {
   TABLE_COLUMN_TO_CELL = 'table-column-to-cell',
   TABLE_ROW_TO_CELL = 'table-row-to-cell',
 
+  MAP_TO_TRANSLATED_MAP = 'map-to-translated-map',
+
   WORD_MAP = 'word-map',
+
   WORD_TO_TRANSLATION = 'word-to-translation',
+  PHRASE_TO_TRANSLATION = 'word-to-translation',
 
   WORD_SEQUENCE_TO_WORD = 'word-sequence-to-word',
   WORD_SEQUENCE_TO_DOCUMENT = 'word-sequence-to-document',
